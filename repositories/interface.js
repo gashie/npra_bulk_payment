@@ -5,7 +5,12 @@ const EXPECTED_FUNCTIONS =
     [
         'saveRequests',
         'findReference',
-        'generateRef'
+        'generateRef',
+        'makeNecRequest',
+        'saveRoutingItem',
+        'findRoutingItem',
+        'viewRoutingItems',
+        'updateRoutingItem'
 
     
     ];

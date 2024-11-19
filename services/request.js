@@ -17,7 +17,15 @@ async function uniqueIdGeneratorService(reference) {
     const repository = repositoryFactory.getRepository(dbType, type);
     return await repository.generateRef(reference);
 }
+async function makeNecRequestService(payload,srcBankCode,destBankCode) {
+    const repository = repositoryFactory.getRepository('api', 'gip');
+    return await repository.makeNecRequest(payload,srcBankCode,destBankCode);
+}
+
+async function findParticipantService(code) {
+    const repository = repositoryFactory.getRepository('json', 'participant');
+    return await repository.findRoutingItem(code);
+}
 
 
-
-module.exports = { saveReqestService,findReferenceService,uniqueIdGeneratorService };
+module.exports = { saveReqestService,findReferenceService,uniqueIdGeneratorService,makeNecRequestService,findParticipantService };
