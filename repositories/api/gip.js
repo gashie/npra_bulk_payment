@@ -27,7 +27,6 @@ async function makeNecRequest(payload,srcBankCode,destBankCode) {
 
     try {
         // Make the SOAP request
-        console.log(soapPayload);
         
         const { xmlResponse, jsonResponse } = await sendSoapRequest(
             'http://localhost:3004/NED',
@@ -35,11 +34,9 @@ async function makeNecRequest(payload,srcBankCode,destBankCode) {
         );
 
         // Log the responses
-        console.log('XML Response:', xmlResponse);
-        console.log('JSON Response:', JSON.stringify(jsonResponse, null, 2));
 
        
-        return { xmlResponse, jsonResponse };
+        return { jsonResponse };
     } catch (error) {
         console.error('Error during SOAP request:', error);
         throw error; 

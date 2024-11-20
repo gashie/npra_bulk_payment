@@ -20,7 +20,7 @@ exports.sendRequest = asynHandler(async (req, res) => {
     const destBankCode = await requestService.findParticipantService(payload.dest_bank_code);
 
     if (!(srcBankCode && destBankCode)) {
-        return sendResponse(res, 0, 200, "Sorry, invalid account", []);
+        return sendResponse(res, 0, 200, "Sorry, Participant", []);
     }
 
     // generate session_id and tracking number
@@ -44,9 +44,9 @@ exports.sendRequest = asynHandler(async (req, res) => {
     //emit event to send api request with payload
 
     const nec_result = await requestService.makeNecRequestService(payload, srcBankCode, destBankCode);
-    console.log(nec_result);
+    let gip_response = nec_result.jsonResponse['soapenv:Body']['com:GIPTransaction'].ReqGIPTransaction
 
-
+    payload.gip_response = gip_response
     const result = await requestService.saveReqestService(payload);
     return result.rowCount === 1
         ? sendResponse(res, 1, 200, "Record saved", [])
