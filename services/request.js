@@ -26,6 +26,10 @@ async function findParticipantService(code) {
     const repository = repositoryFactory.getRepository('json', 'participant');
     return await repository.findRoutingItem(code);
 }
+async function findActCodeService(code) {
+    const repository = repositoryFactory.getRepository('json', 'actcodes');
+    return await repository.findActCode(code);
+}
 
 
-module.exports = { saveReqestService,findReferenceService,uniqueIdGeneratorService,makeNecRequestService,findParticipantService };
+module.exports = { saveReqestService,findReferenceService,uniqueIdGeneratorService,makeNecRequestService,findParticipantService,findActCodeService };

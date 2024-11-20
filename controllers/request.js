@@ -47,6 +47,9 @@ exports.sendRequest = asynHandler(async (req, res) => {
     let gip_response = nec_result.jsonResponse['soapenv:Body']['com:GIPTransaction'].ReqGIPTransaction
 
     payload.gip_response = gip_response
+
+    //make act code decision here
+    
     const result = await requestService.saveReqestService(payload);
     return result.rowCount === 1
         ? sendResponse(res, 1, 200, "Record saved", [])

@@ -16,6 +16,10 @@ module.exports = {
     });
   },
 
+  sendGipResponse: (res,code, payload) => {
+    res.status(code).json(payload);
+  },
+
   CatchHistory: async (data, req) => {
     (data.service_name = process.env.ServiceName),
       // data.service_info,
