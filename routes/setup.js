@@ -1,11 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
+const requestController = require("../controllers/request");
 
-const requestController = require('../controllers/request');
-
-
-router.post('/send_request', requestController.sendRequest);
-
+router.post("/ne", requestController.sendRequest);
 
 module.exports = router;

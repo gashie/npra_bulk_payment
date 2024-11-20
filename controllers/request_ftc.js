@@ -6,6 +6,7 @@ const { formatAmount, toSnakeCase } = require("../helper/func");
 
 exports.sendRequest = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
+  console.log(payload);
 
   //-*1.-Validate reference and make sure it unique
   //-*2.-Convert amount to padded value
@@ -39,8 +40,9 @@ exports.sendRequest = asynHandler(async (req, res) => {
     return sendResponse(res, 0, 200, "Sorry, this record already exist", []);
   }
 
-  payload.amount = "000000000000";
-
+    let cleanAmount = formatAmount(payload.amount);
+    payload.amount = cleanAmount;
+  
   payload.session_id = unique_result.rows[0].session_id;
   payload.tracking_number = unique_result.rows[0].tracking_number;
   //emit event to send api request with payload
@@ -61,7 +63,10 @@ exports.sendRequest = asynHandler(async (req, res) => {
     gip_response.ActCode
   );
 
+  console.log("codeDetails", codeDetails);
+
   const result = await requestService.saveReqestService(payload);
+  console.log("payload", payload);
 
   return result.rowCount === 1
     ? sendGipResponse(res, 200, {
