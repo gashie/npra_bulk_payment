@@ -68,23 +68,15 @@ exports.sendRequest = asynHandler(async (req, res) => {
     srcBankCode,
     destBankCode
   );
-  let gip_response =
-    rtgs_result.jsonResponse["soapenv:Body"]["com:GIPTransaction"]
-      .ReqGIPTransaction;
 
-  payload.gip_response = gip_response;
-
-  //make act code decision here
-  let codeDetails = await requestService.findActCodeService(
-    gip_response.ActCode
-  );
+  payload.rtgs_result = rtgs_result;
 
   const result = await requestService.saveReqestService(payload);
 
   return result.rowCount === 1
     ? sendGipResponse(res, 200, {
-        responseCode: codeDetails.code,
-        responseMessage: codeDetails.message,
+        responseCode: "000",
+        responseMessage: "success",
         referenceNumber: payload.reference_number,
         sessionId: payload.session_id,
       })

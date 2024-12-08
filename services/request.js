@@ -24,11 +24,7 @@ async function makeNecRequestService(payload, srcBankCode, destBankCode) {
 
 async function makeRtgsRequestService(payload, srcBankCode, destBankCode) {
   const repository = repositoryFactory.getRepository("api", "rtgs");
-  return await repository.makeRtgsRequest(
-    payload,
-    srcBankCode,
-    destBankCode
-  );
+  return await repository.makeRtgsRequest(payload, srcBankCode, destBankCode);
 }
 
 async function findParticipantService(code) {
@@ -40,6 +36,11 @@ async function findActCodeService(code) {
   return await repository.findActCode(code);
 }
 
+async function reportService(query) {
+  const repository = repositoryFactory.getRepository(dbType, "reports");
+  return await repository.requestReporter(query);
+}
+
 module.exports = {
   saveReqestService,
   findReferenceService,
@@ -48,4 +49,5 @@ module.exports = {
   findParticipantService,
   findActCodeService,
   makeRtgsRequestService,
+  reportService,
 };
