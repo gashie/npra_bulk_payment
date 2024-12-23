@@ -7,6 +7,10 @@ async function saveRequests(payload) {
     let results = await addItem('requests', payload);
     return results
 }
+async function saveJob(payload) {
+    let results = await addItem('job_queue', payload);
+    return results
+}
 
 async function findReference(reference_number) {
     const tableName = "requests";
@@ -23,5 +27,6 @@ async function generateRef(reference_number) {
 module.exports = {
     saveRequests,
     findReference,
-    generateRef
+    generateRef,
+    saveJob
 };

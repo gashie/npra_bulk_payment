@@ -19,6 +19,7 @@ const EXPECTED_FUNCTIONS = [
   "deleteSettlementAccount",
   "requestReporter",
   "approval",
+  "saveJob"
 ];
 
 module.exports = EXPECTED_FUNCTIONS;

@@ -34,6 +34,7 @@
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "morgan": "^1.10.0",
+    "node-cache": "^5.1.2",
     "node-device-detector": "^2.1.3",
     "pg": "^8.12.0",
     "simple-encryptor": "^4.0.0",

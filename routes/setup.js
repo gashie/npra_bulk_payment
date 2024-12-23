@@ -6,10 +6,13 @@ const requestftcController = require("../controllers/request_ftc");
 const institutionController = require("../controllers/institutions");
 const settlementAccountController = require("../controllers/settlement_accounts")
 const reportController = require("../controllers/reports")
-const approvalController = require("../controllers/approval")
+const approvalController = require("../controllers/approval");
+const ipAccessMiddleware = require("../middleware/ipmiddleware");
+const { NecValidator, ftdValidator, tsqValidator } = require("../middleware/validator");
 
-router.post("/ne", requestController.sendRequest);
-router.post("/ft", requestftcController.sendRequest);
+router.post("/debit/v1/ne",NecValidator,ipAccessMiddleware, requestController.sendRequest);
+router.post("/debit/v1/ft", ftdValidator,ipAccessMiddleware,requestftcController.sendRequest);
+router.post("/debit/v1/tsq",tsqValidator,ipAccessMiddleware, requestftcController.sendTsqRequest);
 
 router.post("/create-institution", institutionController.createInstitution);
 router.post("/view-institutions", institutionController.viewInstitutions);
@@ -24,5 +27,6 @@ router.post("/delete-settlement-account", settlementAccountController.deleteSett
 router.post("/report", reportController.mainReportController);
 
 router.post("/approval", approvalController.ApproveOrDeny);
+router.post("/debit/v1/callback", institutionController.testCallback);
 
 module.exports = router;

@@ -54,3 +54,13 @@ exports.deleteInstitution = asynHandler(async (req, res) => {
     return sendResponse(res, 0, 200, "Delete failed, please try later", []);
   }
 });
+
+exports.testCallback = asynHandler(async (req, res) => {
+  return sendResponse(res, 1, 200, "Record Saved", [{
+    "srcBankCode": "300307",
+    "srcAccountNumber": "0011010104334",
+    "referenceNumber": "6876987987",
+    "requestTimestamp": "2023-12-03 11:02:00",
+    "sessionId": "516947236717",
+    }]);
+});

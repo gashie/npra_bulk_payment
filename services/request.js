@@ -8,6 +8,12 @@ async function saveReqestService(config) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.saveRequests(config);
 }
+async function saveJobService(config) {
+  const type = "request"; // Define a default or specific type here
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.saveJob(config);
+}
+
 
 async function findReferenceService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
@@ -50,4 +56,5 @@ module.exports = {
   findActCodeService,
   makeRtgsRequestService,
   reportService,
+  saveJobService
 };

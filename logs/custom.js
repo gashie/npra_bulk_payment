@@ -1,4 +1,5 @@
 const config = require("../config/config");
+const { addItem } = require("../functions/dynamic");
 const { DetectDevice, DetectIp } = require("../utils/devicefuncs");
 
 const systemDate = new Date().toISOString();
@@ -28,6 +29,7 @@ const logMiddleware = async (req, res, next) => {
     const logData = {
       service_name: config.service_name,
       function_name: req.route ? req.route.path : 'Unknown',
+      payload: req.body,
       method: req.method,
       url: req.originalUrl,
       ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
@@ -36,6 +38,7 @@ const logMiddleware = async (req, res, next) => {
       location: location,
       sql_action: req.customLog.sql_action || 'SELECT',
       api_response: res.statusCode,
+      response_data: req.customLog.response_data ,
       response_time: `${responseTime.toFixed(4)} ms`,
       actor: req.customLog.actor || 'Unknown',
       event: req.customLog.event || 'Generic Event',
@@ -43,7 +46,7 @@ const logMiddleware = async (req, res, next) => {
       date_ended: new Date().toISOString(),
       response_message: req.customLog.response_data.message || "",
       response_code: req.customLog.response_data.status,
-      sid: req?.user?.sid || "",
+      sid: req.customLog.sid || req?.user?.sid || "",
       user_id: req?.user?.user_id || "",
     };
 
@@ -98,7 +101,8 @@ const logMiddleware = async (req, res, next) => {
   
 
 // Utility function for centralizing log
-const logCentralized = (logData) => {
+const logCentralized = async (logData) => {
+  addItem("logs",logData)
   console.log(logData); // Ensure the log data is centralized
 };
 

@@ -1,8 +1,3 @@
-//rabbitmq
-const amqp = require("amqplib");
-const EventEmitter = require("events");
-const eventEmitter = new EventEmitter();
-
 // forest.js
 const axios = require("axios");
 const GlobalModel = require("../model/Global");
@@ -102,37 +97,8 @@ async function makeApiCall(
   }
 }
 
-async function getActiveJiraInstance() {
-  let results = await GlobalModel.Finder(
-    "jira_instances",
-    [],
-    [{ column: "status", operator: "=", value: "active" }]
-  );
-  return results;
-}
 
-// Function to send a payload to RabbitMQ and emit an event
-async function sendtoRabbitMQ(payload) {
-  // Configuration
-  const QUEUE_NAME = "jira_requests";
-  const RABBITMQ_URL = "amqp://localhost"; // Replace with your RabbitMQ URL
-  const INTERVAL_MS = 1000; // Interval to manage CPU load
-  try {
-    const connection = await amqp.connect(RABBITMQ_URL);
-    const channel = await connection.createChannel();
-    await channel.assertQueue(QUEUE_NAME);
 
-    // Send payload to RabbitMQ
-    const message = JSON.stringify(payload);
-    channel.sendToQueue(QUEUE_NAME, Buffer.from(message));
-    console.log(`Sent to RabbitMQ: ${message}`);
-
-    // Emit an event indicating a new message has been added
-    eventEmitter.emit("newMessage");
-  } catch (error) {
-    console.error("Failed to send message to RabbitMQ:", error);
-  }
-}
 
 module.exports = {
   addItem,
@@ -140,6 +106,4 @@ module.exports = {
   getItemById,
   updateItem,
   makeApiCall,
-  getActiveJiraInstance,
-  sendtoRabbitMQ,
 };
