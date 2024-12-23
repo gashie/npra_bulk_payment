@@ -19,6 +19,11 @@ async function findReferenceService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.findReference(reference);
 }
+
+async function findUniqueReferenceService(reference_number,src_bank_code,request_timestamp) {
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.findUniqueReference(reference_number,src_bank_code,request_timestamp);
+}
 async function uniqueIdGeneratorService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.generateRef(reference);
@@ -56,5 +61,6 @@ module.exports = {
   findActCodeService,
   makeRtgsRequestService,
   reportService,
-  saveJobService
+  saveJobService,
+  findUniqueReferenceService
 };

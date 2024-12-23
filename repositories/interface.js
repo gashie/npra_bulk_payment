@@ -3,6 +3,7 @@
 const EXPECTED_FUNCTIONS = [
   "saveRequests",
   "findReference",
+  "findUniqueReference",
   "generateRef",
   "makeNecRequest",
   "saveRoutingItem",

@@ -114,18 +114,18 @@ exports.sendTsqRequest = asynHandler(async (req, res) => {
   //-*6.-Save response + request
 
   // check src and dest bank
-  const srcBankCode = await requestService.findParticipantService(
-    payload.src_bank_code
-  );
+  // const srcBankCode = await requestService.findParticipantService(
+  //   payload.src_bank_code
+  // );
 
-  if (!(srcBankCode)) {
-    return sendResponse(res, 0, 200, "Sorry, Participant", []);
-  }
+  // if (!(srcBankCode)) {
+  //   return sendResponse(res, 0, 200, "Sorry, Participant", []);
+  // }
 
 
   // find reference
-  const ref_result = await requestService.findReferenceService(
-    payload.transaction_reference_number
+  const ref_result = await requestService.findUniqueReferenceService(
+    payload.transaction_reference_number,payload.src_bank_code,payload.request_timestamp
   );
 
 
