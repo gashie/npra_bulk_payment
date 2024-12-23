@@ -125,7 +125,7 @@ exports.sendTsqRequest = asynHandler(async (req, res) => {
 
   // find reference
   const ref_result = await requestService.findReferenceService(
-    payload.reference_number
+    payload.transaction_reference_number
   );
 
 
