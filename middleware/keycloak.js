@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Load the public key from the file
-const publicKey = fs.readFileSync(path.resolve(__dirname, '../keycloak_public.pem'), 'utf8');
+const publicKey = fs.readFileSync(path.resolve(__dirname, 'keycloak_public.pem'), 'utf8');
 
 // Middleware to verify JWT
 const verifyToken = (req, res, next) => {
