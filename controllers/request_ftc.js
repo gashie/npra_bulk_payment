@@ -78,8 +78,24 @@ exports.sendRequest = asynHandler(async (req, res) => {
   payload.user_agent = await DetectDevice(req.headers["user-agent"], req);
   payload.response_code = "000"
   payload.response_message = "success"
+
+  let callBackPayload = {
+    "srcBankCode": payload.src_bank_code,
+    "srcAccountNumber": payload.src_account_number,
+    "referenceNumber": payload.reference_number,
+    "requestTimestamp": payload.request_timestamp,
+    "sessionId": payload.session_id,
+    "destBankCode": payload.dest_bank_code,
+    "destAccountNumber": payload.dest_account_number,
+    "narration": payload.narration,
+    "responseCode": "000",
+    "responseMessage": "Approved",
+    "status": "SUCCESSFUL",
+    }
+  
+    let QueuePayload = {payload: callBackPayload, status:"PENDING", retries:0, callback_url:payload.callback_url}
   const result = await requestService.saveReqestService(payload);
-  await requestService.saveJobService({payload, status:"PENDING", retries:0,});
+  await requestService.saveJobService(QueuePayload);
   req.customLog = {
     event: eventName,
     sid: payload.session_id,

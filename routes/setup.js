@@ -9,10 +9,11 @@ const reportController = require("../controllers/reports")
 const approvalController = require("../controllers/approval");
 const ipAccessMiddleware = require("../middleware/ipmiddleware");
 const { NecValidator, ftdValidator, tsqValidator } = require("../middleware/validator");
+const verifyToken = require("../middleware/keycloak");
 
-router.post("/debit/v1/ne",NecValidator, requestController.sendRequest);
-router.post("/debit/v1/ft", ftdValidator,requestftcController.sendRequest);
-router.post("/debit/v1/tsq",tsqValidator, requestftcController.sendTsqRequest);
+router.post("/debit/v1/ne",verifyToken,NecValidator, requestController.sendRequest);
+router.post("/debit/v1/ft",verifyToken, ftdValidator,requestftcController.sendRequest);
+router.post("/debit/v1/tsq",verifyToken, tsqValidator, requestftcController.sendTsqRequest);
 
 router.post("/create-institution", institutionController.createInstitution);
 router.post("/view-institutions", institutionController.viewInstitutions);

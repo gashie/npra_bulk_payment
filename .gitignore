@@ -3,3 +3,4 @@ config/config.env
 package-lock.json
 logs/rotate*
 logs/.d07c3509fb1ce39d51f07c8a1bc84c1bfc93a515-audit.json
+*.pem

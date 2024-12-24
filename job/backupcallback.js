@@ -39,16 +39,20 @@ const sendFailureNotification = async (jobId, error) => {
 
 // Process a Single Job
 const processJob = async (job, config) => {
-    const { id, payload, retries,callback_url } = job;
-    const { max_retries, retry_interval_seconds } = config;
+    const { id, payload, retries } = job;
+    const { max_retries, retry_interval_seconds, callback_url } = config;
 
     try {
         console.log(`Processing Job ${id} with payload:`, payload);
 
-        const response = await axios.post(callback_url, payload);
+        const response = await axios.post(payload.callback_url, payload);
 
-        console.log(`Job ${id} processed successfully.`);
+        if (response.status === 200) {
+            console.log(`Job ${id} processed successfully.`);
             await updateJobStatus(id, 'SUCCESSFUL', retries + 1, response.data, null);
+        } else {
+            throw new Error(`Unexpected response: ${response.status}`);
+        }
     } catch (error) {
         console.error(`Error processing Job ${id}:`, error.message);
 
