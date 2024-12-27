@@ -91,6 +91,89 @@ CREATE TABLE system_logs (
     CONSTRAINT system_logs_pkey PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.api_access
+(
+    id integer NOT NULL DEFAULT nextval('api_access_id_seq'::regclass),
+    api_key character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    client_name character varying(255) COLLATE pg_catalog."default",
+    allowed_endpoints jsonb DEFAULT '[]'::jsonb,
+    rate_limit_per_minute integer DEFAULT 60,
+    enabled boolean DEFAULT true,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now(),
+    client_ip inet,
+    CONSTRAINT api_access_pkey PRIMARY KEY (id),
+    CONSTRAINT api_access_api_key_key UNIQUE (api_key)
+)
+CREATE TABLE IF NOT EXISTS public.global_config
+(
+    id integer NOT NULL DEFAULT nextval('global_config_id_seq'::regclass),
+    cors_allowed_origins jsonb DEFAULT '[]'::jsonb,
+    cors_enabled boolean DEFAULT true,
+    rate_limit_global_per_minute integer DEFAULT 1000,
+    ip_whitelist jsonb DEFAULT '[]'::jsonb,
+    ip_blacklist jsonb DEFAULT '[]'::jsonb,
+    enabled boolean DEFAULT true,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now(),
+    allowed_endpoints jsonb DEFAULT '"*"'::jsonb,
+    CONSTRAINT global_config_pkey PRIMARY KEY (id)
+)
+CREATE TABLE IF NOT EXISTS public.job_config
+(
+    id integer NOT NULL DEFAULT nextval('job_config_id_seq'::regclass),
+    max_retries integer DEFAULT 5,
+    retry_interval_seconds integer DEFAULT 60,
+    callback_url character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    email_recipient character varying(255) COLLATE pg_catalog."default",
+    enabled boolean DEFAULT true,
+    CONSTRAINT job_config_pkey PRIMARY KEY (id)
+)
+
+CREATE TABLE IF NOT EXISTS public.job_queue
+(
+    id integer NOT NULL DEFAULT nextval('job_queue_id_seq'::regclass),
+    payload jsonb NOT NULL,
+    status character varying(50) COLLATE pg_catalog."default" DEFAULT 'PENDING'::character varying,
+    retries integer DEFAULT 0,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now(),
+    response_data jsonb,
+    error_details text COLLATE pg_catalog."default",
+    callback_url text COLLATE pg_catalog."default",
+    CONSTRAINT job_queue_pkey PRIMARY KEY (id)
+)
+
+CREATE TABLE IF NOT EXISTS public.logs
+(
+    log_id integer NOT NULL DEFAULT nextval('logs_log_id_seq'::regclass),
+    service_name character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    function_name character varying(200) COLLATE pg_catalog."default",
+    method character varying(10) COLLATE pg_catalog."default" NOT NULL,
+    url text COLLATE pg_catalog."default" NOT NULL,
+    ip character varying(45) COLLATE pg_catalog."default",
+    user_agent text COLLATE pg_catalog."default",
+    location character varying(200) COLLATE pg_catalog."default" DEFAULT 'Unknown Location'::character varying,
+    sql_action character varying(50) COLLATE pg_catalog."default",
+    api_response smallint,
+    response_code character varying(50) COLLATE pg_catalog."default",
+    response_message text COLLATE pg_catalog."default",
+    actor character varying(100) COLLATE pg_catalog."default" DEFAULT 'Unknown'::character varying,
+    event character varying(100) COLLATE pg_catalog."default",
+    date_started timestamp without time zone NOT NULL,
+    date_ended timestamp without time zone NOT NULL,
+    sid character varying(100) COLLATE pg_catalog."default",
+    user_id character varying(100) COLLATE pg_catalog."default",
+    device jsonb,
+    device_client jsonb,
+    device_info jsonb,
+    response_data jsonb,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    response_time character varying(60) COLLATE pg_catalog."default",
+    payload jsonb,
+    CONSTRAINT logs_pkey PRIMARY KEY (log_id)
+)
+
 CREATE OR REPLACE FUNCTION generate_unique_ids(reference_number TEXT)
 RETURNS TABLE(session_id BIGINT, tracking_number BIGINT) AS $$
 DECLARE
