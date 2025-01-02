@@ -2,6 +2,7 @@ const institionService = require("../services/institution");
 const asynHandler = require("../middleware/async");
 const { sendResponse } = require("../utils/utilfunc");
 const { toSnakeCase } = require("../helper/func");
+const { saveCallbackService } = require("../services/request");
 
 exports.createInstitution = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
@@ -55,6 +56,23 @@ exports.deleteInstitution = asynHandler(async (req, res) => {
   }
 });
 
+exports.createCallback = asynHandler(async (req, res) => {
+  const payload = toSnakeCase(req.body);
+
+  const result = await saveCallbackService(payload);
+
+  if (result.rowCount == 1) {
+    return sendResponse(res, 1, 200, "Record Saved", []);
+  } else {
+    return sendResponse(
+      res,
+      0,
+      200,
+      "Sorry, error saving record: contact administrator",
+      []
+    );
+  }
+});
 exports.testCallback = asynHandler(async (req, res) => {
   return sendResponse(res, 1, 200, "Record Saved", [{
     "srcBankCode": "300307",

@@ -28,7 +28,7 @@ router.post("/delete-settlement-account", settlementAccountController.deleteSett
 router.post("/report", reportController.mainReportController);
 
 router.post("/approval", approvalController.ApproveOrDeny);
-router.post("/debit/v1/callback", institutionController.testCallback);
+router.post("/debit/v1/callback", institutionController.createCallback);
 
 //test env
 router.post("/debit/v1/test/ne",NecValidator, requestController.sendRequest);

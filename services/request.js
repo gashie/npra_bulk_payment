@@ -13,6 +13,11 @@ async function saveJobService(config) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.saveJob(config);
 }
+async function saveCallbackService(config) {
+  const type = "request"; // Define a default or specific type here
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.saveCallback(config);
+}
 
 
 async function findReferenceService(reference) {
@@ -20,9 +25,9 @@ async function findReferenceService(reference) {
   return await repository.findReference(reference);
 }
 
-async function findUniqueReferenceService(reference_number,src_bank_code,request_timestamp) {
+async function findUniqueReferenceService(reference_number, src_bank_code, request_timestamp) {
   const repository = repositoryFactory.getRepository(dbType, type);
-  return await repository.findUniqueReference(reference_number,src_bank_code,request_timestamp);
+  return await repository.findUniqueReference(reference_number, src_bank_code, request_timestamp);
 }
 async function uniqueIdGeneratorService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
@@ -75,5 +80,6 @@ module.exports = {
   saveJobService,
   findUniqueReferenceService,
   logEvents,
-  makeGipRequestService
+  makeGipRequestService,
+  saveCallbackService
 };

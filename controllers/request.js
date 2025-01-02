@@ -80,7 +80,7 @@ exports.sendRequest = asynHandler(async (req, res) => {
   );
   payload.response_code = codeDetails.code
   payload.response_message = codeDetails.message
-  payload.dest_account_name = gip_response.nameToDebit
+  payload.dest_account_name = gip_response.response.nameToDebit
   payload.src_account_name = ""
 
   const result = await requestService.saveReqestService(payload);

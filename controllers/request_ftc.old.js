@@ -51,7 +51,27 @@ exports.sendRequest = asynHandler(async (req, res) => {
 
   //emit event to send api request with payload
 
+  const rtgs_payload = {
+    file_type: "txt", // Include required fields like file_type
+    zeroes: "000000000000000000", // Add zeroes field
+    callback_url: payload.callback_url, // Specify the callback_url
+    transaction_details: [
+      {
+        file_name: payload.reference_number,
+        AccountToCredit: payload.dest_account_number,
+        AccountToDebit: payload.src_account_number,
+        amount: payload.amount,
+        desc1: "GIP",
+        desc2: "RTPS",
+      },
+    ],
+  };
 
+  // const rtgs_result = await requestService.makeRtgsRequestService(
+  //   rtgs_payload,
+  //   srcBankCode,
+  //   destBankCode
+  // );
 
   // payload.rtgs_result = rtgs_result;
   payload.ip_address =  DetectIp(req)
