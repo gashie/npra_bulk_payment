@@ -7,7 +7,7 @@ const institutionController = require("../controllers/institutions");
 const settlementAccountController = require("../controllers/settlement_accounts")
 const reportController = require("../controllers/reports")
 const approvalController = require("../controllers/approval");
-const ipAccessMiddleware = require("../middleware/ipmiddleware");
+// const ipAccessMiddleware = require("../middleware/ipmiddleware");
 const { NecValidator, ftdValidator, tsqValidator } = require("../middleware/validator");
 const verifyToken = require("../middleware/keycloak");
 
