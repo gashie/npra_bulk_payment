@@ -33,6 +33,12 @@ async function makeNecRequestService(payload, srcBankCode, destBankCode) {
   return await repository.makeNecRequest(payload, srcBankCode, destBankCode);
 }
 
+async function makeGipRequestService(payload, url) {
+  const repository = repositoryFactory.getRepository("api", "gip");
+  return await repository.gipGeneral(payload, url);
+}
+
+
 async function makeRtgsRequestService(payload, srcBankCode, destBankCode) {
   const repository = repositoryFactory.getRepository("api", "rtgs");
   return await repository.makeRtgsRequest(payload, srcBankCode, destBankCode);
@@ -52,6 +58,11 @@ async function reportService(query) {
   return await repository.requestReporter(query);
 }
 
+async function logEvents(payload) {
+  console.log('Service---- NAME_ENQUIRY event:', payload);
+
+}
+
 module.exports = {
   saveReqestService,
   findReferenceService,
@@ -62,5 +73,7 @@ module.exports = {
   makeRtgsRequestService,
   reportService,
   saveJobService,
-  findUniqueReferenceService
+  findUniqueReferenceService,
+  logEvents,
+  makeGipRequestService
 };

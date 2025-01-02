@@ -7,8 +7,8 @@ const {errorHandler} = require('./middleware/error');
 const notFoundHandler = require('./middleware/notFound');
 const securityHeaders = require('./middleware/securityHeaders');
 const config = require('./config/config');
-const globalEventEmitter = require('./utils/eventEmitter'); // Import the global event emitter
-
+ const globalEventEmitter = require('./utils/eventEmitter'); // Import the global event emitter
+require('./events'); // Dynamically load all event listeners
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
@@ -19,6 +19,7 @@ app.use(cookieParser());
 // Custom security headers
 app.use(securityHeaders);
 app.use(logMiddleware);
+
 
 
 // Custom logging middleware in development

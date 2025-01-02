@@ -42,8 +42,7 @@ async function makeApiCall(
 
     const response = await axios(config);
 
-    //store response
-    console.log(response.data);
+    //store response;
     return response.data;
   } catch (error) {
     throw error;

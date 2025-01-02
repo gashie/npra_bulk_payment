@@ -2,19 +2,16 @@ const requestService = require("../services/request");
 const humps = require("humps");
 const { sendResponse, sendGipResponse } = require("../utils/utilfunc");
 const asynHandler = require("../middleware/async");
-const { formatAmount, toSnakeCase, convertTimestampToCustomFormat } = require("../helper/func");
+const { formatAmount, toSnakeCase } = require("../helper/func");
 const { DetectIp, DetectDevice } = require("../utils/devicefuncs");
 const globalEventEmitter = require('../utils/eventEmitter');
-const { gipNedUrl } = require("../config/config");
 
 exports.sendRequest = asynHandler(async (req, res) => {
   const eventName = "NAME_ENQUIRY";
-  const functionCode = "230"
-  const request_timestamp = convertTimestampToCustomFormat();
 
   const payload = toSnakeCase(req.body);
-  // Emit an event for post-processing (e.g., logging, notifications)
-  globalEventEmitter.emit('NAME_ENQUIRY', req.body);
+   // Emit an event for post-processing (e.g., logging, notifications)
+   globalEventEmitter.emit('NAME_ENQUIRY', req.body);
 
   //-*1.-Validate reference and make sure it unique
   //-*2.-Convert amount to padded value
@@ -49,64 +46,58 @@ exports.sendRequest = asynHandler(async (req, res) => {
   }
 
   payload.amount = "000000000000";
-  payload.request_type = "NAME_ENQUIRY"
+  payload.request_type= "NAME_ENQUIRY"
 
   payload.session_id = unique_result.rows[0].session_id;
   payload.tracking_number = unique_result.rows[0].tracking_number;
-  payload.ip_address = DetectIp(req)
+  payload.ip_address =  DetectIp(req)
   payload.user_agent = await DetectDevice(req.headers["user-agent"], req)
   //emit event to send api request with payload
-  let gip_payload = {
-    accountToCredit: payload.src_account_number,
-    accountToDebit: payload.dest_account_number,
-    dateTime: request_timestamp,
-    destBank: destBankCode,
-    functionCode: functionCode,
-    narration: payload.narration,
-    originBank: srcBankCode,
-    sessionId: payload.session_id,
-    trackingNumber: payload.tracking_number,
-    amount: payload.amount
-  }
 
-  const nec_result = await requestService.makeGipRequestService(gip_payload,gipNedUrl);
-  let gip_response = nec_result;
+  const nec_result = await requestService.makeNecRequestService(
+    payload,
+    srcBankCode,
+    destBankCode
+  );
+  let gip_response =
+    nec_result.jsonResponse["soapenv:Body"]["com:GIPTransaction"]
+      .ReqGIPTransaction;
 
-  payload.gip_response = gip_response.response;
+  payload.gip_response = gip_response;
 
   //make act code decision here
   let codeDetails = await requestService.findActCodeService(
-    payload.gip_response.actionCode
+    gip_response.ActCode
   );
   payload.response_code = codeDetails.code
   payload.response_message = codeDetails.message
-  payload.dest_account_name = gip_response.nameToDebit
-  payload.src_account_name = ""
+  payload.dest_account_name = "Kwaku Manu"
+   payload.src_account_name = "Fautina Abdulai"
 
   const result = await requestService.saveReqestService(payload);
   req.customLog = {
     event: eventName,
     sid: payload.session_id,
-    sql_action: "INSERT"
+    sql_action:"INSERT"
   };
 
   return result.rowCount === 1
     ? sendGipResponse(res, 200, {
-      responseCode: codeDetails.code,
-      responseMessage: codeDetails.message,
-      status: codeDetails.code === "000" ? "SUCCESSFUL" : "FAILED",
-      sessionId: payload.session_id,
-      destBankCode: payload.dest_bank_code,
-      destAccountNumber:  payload.dest_account_number,
-      destAccountName: gip_response.NameToCredit,
-      destAccountName: gip_response.nameToDebit
-    })
+        responseCode: codeDetails.code,
+        responseMessage: codeDetails.message,
+        status: codeDetails.code === "000" ? "SUCCESSFUL" : "FAILED",
+        sessionId: payload.session_id,
+        destBankCode: payload.dest_bank_code,
+        destAccountNumber: gip_response.AccountToCredit,
+        destAccountName: gip_response.NameToCredit,
+        destAccountName: "Kwaku Manu"
+      })
     : // ? sendResponse(res, 1, 200, "Record saved", [])
-    sendResponse(
-      res,
-      0,
-      200,
-      "Sorry, error saving record: contact administrator",
-      []
-    );
+      sendResponse(
+        res,
+        0,
+        200,
+        "Sorry, error saving record: contact administrator",
+        []
+      );
 });

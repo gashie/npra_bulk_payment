@@ -20,7 +20,8 @@ const EXPECTED_FUNCTIONS = [
   "deleteSettlementAccount",
   "requestReporter",
   "approval",
-  "saveJob"
+  "saveJob",
+  "gipGeneral"
 ];
 
 module.exports = EXPECTED_FUNCTIONS;

@@ -30,4 +30,9 @@ router.post("/report", reportController.mainReportController);
 router.post("/approval", approvalController.ApproveOrDeny);
 router.post("/debit/v1/callback", institutionController.testCallback);
 
+//test env
+router.post("/debit/v1/test/ne",NecValidator, requestController.sendRequest);
+router.post("/debit/v1/test/ft",verifyToken, ftdValidator,requestftcController.sendRequest);
+router.post("/debit/v1/test/tsq",verifyToken, tsqValidator, requestftcController.sendTsqRequest);
+
 module.exports = router;
