@@ -7,6 +7,11 @@ async function saveRequests(payload) {
     let results = await addItem('requests', payload);
     return results
 }
+
+async function saveEvents(payload) {
+    let results = await addItem('event', payload);
+    return results
+}
 async function saveCallback(payload) {
     let results = await addItem('sample_callback', payload);
     return results
@@ -48,5 +53,6 @@ module.exports = {
     generateRef,
     saveJob,
     findUniqueReference,
-    saveCallback
+    saveCallback,
+    saveEvents
 };

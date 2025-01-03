@@ -59,7 +59,10 @@ exports.deleteInstitution = asynHandler(async (req, res) => {
 exports.createCallback = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
 
-  const result = await saveCallbackService(payload);
+  let body = {
+    callback_url :payload
+  }
+  const result = await saveCallbackService(body);
 
   if (result.rowCount == 1) {
     return sendResponse(res, 1, 200, "Record Saved", []);

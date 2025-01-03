@@ -32,7 +32,7 @@ router.post("/debit/v1/callback", institutionController.createCallback);
 
 //test env
 router.post("/debit/v1/test/ne",NecValidator, requestController.sendRequest);
-router.post("/debit/v1/test/ft",verifyToken, ftdValidator,requestftcController.sendRequest);
-router.post("/debit/v1/test/tsq",verifyToken, tsqValidator, requestftcController.sendTsqRequest);
+router.post("/debit/v1/test/ft",ftdValidator,requestftcController.sendRequest);
+router.post("/debit/v1/test/tsq",tsqValidator, requestftcController.sendTsqRequest);
 
 module.exports = router;

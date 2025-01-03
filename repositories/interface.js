@@ -22,7 +22,8 @@ const EXPECTED_FUNCTIONS = [
   "approval",
   "saveJob",
   "gipGeneral",
-  "saveCallback"
+  "saveCallback",
+  "saveEvents"
 ];
 
 module.exports = EXPECTED_FUNCTIONS;

@@ -18,6 +18,11 @@ async function saveCallbackService(config) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.saveCallback(config);
 }
+async function saveEventService(config) {
+  const type = "request"; // Define a default or specific type here
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.saveEvents(config);
+}
 
 
 async function findReferenceService(reference) {
@@ -81,5 +86,6 @@ module.exports = {
   findUniqueReferenceService,
   logEvents,
   makeGipRequestService,
-  saveCallbackService
+  saveCallbackService,
+  saveEventService
 };
