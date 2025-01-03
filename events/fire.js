@@ -19,13 +19,13 @@ globalEventEmitter.on('NEC', async (payload) => {
 
 globalEventEmitter.on(ftdEventName, async (payload) => {
     try {
-        const request_timestamp = convertTimestampToCustomFormat();
+       
 
         let ftdPayload = {
             accountToCredit: payload.src_account_number,
             accountToDebit: payload.dest_account_number,
             channelCode: CHANNEL_CODE,
-            dateTime: request_timestamp,
+            dateTime: payload.request_timestamp,
             destBank: payload.dest_bank_code,
             functionCode: FTD_CODE,
             narration: payload.narration,
@@ -38,6 +38,8 @@ globalEventEmitter.on(ftdEventName, async (payload) => {
             nameToDebit: payload.dest_account_name
         }
 
+        console.log('ftdPayload',ftdPayload);
+        
         let event_response = await service.makeGipRequestService(ftdPayload, gipFtdUrl)
         let final_response = event_response.response;
         let eventPayload = {

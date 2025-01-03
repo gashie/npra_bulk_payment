@@ -6,6 +6,7 @@ const config = {
   gipNedUrl: "http://localhost:3004/ned",
   gipNecUrl: "http://localhost:3004/nec",
   gipFtdUrl: "http://localhost:3004/ftd",
+  gipTsqUrl: "http://localhost:3004/tsq",
   NEC_CODE: 230,
   FTD_CODE: 241,
   FTC_CODE: 240,

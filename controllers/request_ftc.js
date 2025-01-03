@@ -1,12 +1,14 @@
 const requestService = require("../services/request");
 const { sendResponse, sendGipResponse } = require("../utils/utilfunc");
 const asynHandler = require("../middleware/async");
-const { formatAmount, toSnakeCase } = require("../helper/func");
+const { formatAmount, toSnakeCase, convertTimestampToCustomFormat } = require("../helper/func");
 const { DetectIp, DetectDevice } = require("../utils/devicefuncs");
 const globalEventEmitter = require("../utils/eventEmitter");
+const { gipTsqUrl, CHANNEL_CODE, FTC_CODE } = require("../config/config");
 
 exports.sendRequest = asynHandler(async (req, res) => {
   const eventName = "FTD_REQUEST";
+  const request_timestamp = convertTimestampToCustomFormat();
 
   const payload = toSnakeCase(req.body);
 
@@ -49,6 +51,7 @@ exports.sendRequest = asynHandler(async (req, res) => {
   payload.session_id = unique_result.rows[0].session_id;
   payload.tracking_number = unique_result.rows[0].tracking_number;
   payload.request_type= "FTD_REQUEST"
+  payload.date_time = request_timestamp
 
   //emit event to send api request with payload
 
@@ -110,31 +113,73 @@ exports.sendTsqRequest = asynHandler(async (req, res) => {
     payload.transaction_reference_number,payload.src_bank_code,payload.request_timestamp
   );
 
+  if (ref_result.rows.length == 0) {
+    return  sendGipResponse(
+      res,
+      200,
+      {
+        "referenceNumber": req.body.referenceNumber,
+        "transactionReferenceNumber": req.body.transactionReferenceNumber,
+        "sessionId": null,
+        "srcBankCode": null,
+        "srcAccountNumber": null,
+        "destBankCode": null,
+        "destAccountNumber": null,
+        "amount": null,
+        "narration": null,
+        "responseCode": "999",
+        "responseMessage": "Transaction not found",
+        "status": "NOT_FOUND"
+        }
+    );;
+  }
+   let found_result = ref_result.rows[0]
+  let gip_payload = {
+      dateTime: found_result.date_time,
+      accountToCredit: found_result.src_account_number,
+      accountToDebit: found_result.dest_account_number,
+      nameToCredit: found_result.src_account_name,
+      nameToDebit: found_result.dest_account_name,
+      amount: found_result.amount,
+      trackingNumber: found_result.tracking_number,
+      sessionId: found_result.session_id,
+      functionCode: FTC_CODE,
+      originBank: found_result.src_account_number,
+      destBank: found_result.dest_account_number,
+      narration: found_result.narration,
+      channelCode: CHANNEL_CODE
+  }
 
+  const calback_response = await requestService.makeGipRequestService(gip_payload,gipTsqUrl);
+  let gip_response = calback_response.response;
+
+  //make act code decision here
+    let codeDetails = await requestService.findActCodeService(
+     gip_response.actionCode
+    );
   //emit event to send api request with payload
   req.customLog = {
     event: eventName,
-    sid: payload.session_id,
+    sid: payload?.session_id,
      sql_action:"SELECT"
   };
 
-  console.log(ref_result.rows[0]);
   
   return ref_result.rowCount === 1
     ? sendGipResponse(res, 200, {
       
-        referenceNumber: ref_result.rows[0].reference_number,
-        transactionReferenceNumber: "6876987987",
-        sessionId: ref_result.rows[0].session_id,
-        srcBankCode: ref_result.rows[0].src_bank_code,
-        srcAccountNumber: ref_result.rows[0].src_account_number,
-        destBankCode: ref_result.rows[0].dest_bank_code,
-        destAccountNumber: ref_result.rows[0].dest_account_number,
-        amount: ref_result.rows[0].amount,
-        narration: ref_result.rows[0].narration,
-        responseCode: ref_result.rows[0].response_code,
-        responseMessage: "Approved",
-        status: "SUCCESSFUL"
+        referenceNumber: gip_response.reference_number,
+        transactionReferenceNumber: gip_response.reference_number,
+        sessionId: found_result.session_id,
+        srcBankCode: gip_response.originBank,
+        srcAccountNumber: gip_response.accountToCredit,
+        destBankCode: gip_response.destBank,
+        destAccountNumber: gip_response.accountToDebit,
+        amount: gip_response.amount,
+        narration: found_result.narration,
+        responseCode: codeDetails.code,
+        responseMessage: codeDetails.message,
+        status: codeDetails.code === "000" ? "SUCCESSFUL" : "FAILED",
         
       })
     : // ? sendResponse(res, 1, 200, "Record saved", [])
