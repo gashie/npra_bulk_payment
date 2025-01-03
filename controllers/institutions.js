@@ -60,7 +60,7 @@ exports.createCallback = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
 
   let body = {
-    callback_url :payload
+    callback_payload :payload
   }
   const result = await saveCallbackService(body);
 
