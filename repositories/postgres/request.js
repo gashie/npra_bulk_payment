@@ -13,7 +13,7 @@ async function saveEvents(payload) {
     return results
 }
 async function saveCallback(payload) {
-    let results = await addItem('sample_callback', payload);
+    let results = await addItem('callback', payload);
     return results
 }
 async function saveJob(payload) {

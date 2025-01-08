@@ -35,7 +35,8 @@ globalEventEmitter.on(ftdEventName, async (payload) => {
             trackingNumber: payload.tracking_number,
             amount: payload.amount,
             nameToCredit: payload.src_account_name,
-            nameToDebit: payload.dest_account_name
+            nameToDebit: payload.dest_account_name,
+            src_bank_code:payload.src_bank_code
         }
 
         console.log('ftdPayload',ftdPayload);

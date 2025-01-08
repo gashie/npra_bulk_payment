@@ -193,3 +193,57 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TABLE callback (
+    id                  uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    payload             JSONB NOT NULL,                 -- The entire callback payload
+    amount              VARCHAR(100),
+    date_time           VARCHAR(100),
+    dest_bank           VARCHAR(100),
+    narration           VARCHAR(255),
+    session_id          VARCHAR(100),
+    action_code         VARCHAR(50),
+    origin_bank         VARCHAR(100),
+    channel_code        VARCHAR(50),
+    approval_code       VARCHAR(100),
+    function_code       VARCHAR(100),
+    name_to_debit       VARCHAR(255),
+    name_to_credit      VARCHAR(255),
+    tracking_number     VARCHAR(100),
+    account_to_debit    VARCHAR(100),
+    account_to_credit   VARCHAR(100),
+    
+    status              VARCHAR(50) DEFAULT 'PENDING',   -- PENDING, PROCESSED, FAILED, etc.
+	callback_type       VARCHAR(50) DEFAULT 'INTERNAL',   -- PENDING, PROCESSED, FAILED, etc.
+    created_at          TIMESTAMP DEFAULT NOW(),
+    processed_at        TIMESTAMP,                      -- Set when the callback is processed
+    
+    incoming_url        VARCHAR(255),                   -- URL the callback came from
+    outgoing_url        VARCHAR(255)                    -- URL we send callback to
+);
+CREATE TABLE callback (
+    id                  uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    payload             JSONB NOT NULL,                 -- The entire callback payload
+    amount              VARCHAR(100),
+    date_time           VARCHAR(100),
+    dest_bank           VARCHAR(100),
+    narration           VARCHAR(255),
+    session_id          VARCHAR(100),
+    action_code         VARCHAR(50),
+    origin_bank         VARCHAR(100),
+    channel_code        VARCHAR(50),
+    approval_code       VARCHAR(100),
+    function_code       VARCHAR(100),
+    name_to_debit       VARCHAR(255),
+    name_to_credit      VARCHAR(255),
+    tracking_number     VARCHAR(100),
+    account_to_debit    VARCHAR(100),
+    account_to_credit   VARCHAR(100),
+    
+    status              VARCHAR(50) DEFAULT 'PENDING',   -- PENDING, PROCESSED, FAILED, etc.
+	callback_type       VARCHAR(50) DEFAULT 'INTERNAL',   -- PENDING, PROCESSED, FAILED, etc.
+    created_at          TIMESTAMP DEFAULT NOW(),
+    processed_at        TIMESTAMP,                      -- Set when the callback is processed
+    
+    incoming_url        VARCHAR(255),                   -- URL the callback came from
+    outgoing_url        VARCHAR(255)                    -- URL we send callback to
+);
