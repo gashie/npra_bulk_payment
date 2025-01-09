@@ -1,12 +1,4 @@
-const { Pool } = require('pg');
 
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'bulk_pension',
-  password: 'admin',
-  port: 5432
-});
 
 /**
  * Helper function to sleep for a given number of milliseconds.
@@ -17,6 +9,7 @@ function sleep(ms) {
 }
 const { prepareColumns } = require("../../utils/global");
 const { logger } = require("../../logs/winston");
+const pool = require("./pool");
 
 const npradb = {};
 

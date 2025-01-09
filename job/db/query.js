@@ -1,6 +1,7 @@
 const { gipFtdUrl, CHANNEL_CODE, CALLBACK_URL, FTC_CODE, gipFtcUrl } = require("../../config/config");
 const { makeGipRequestService } = require("../../services/request");
 const npradb = require("./db"); // your dynamic CRUD + transaction helpers
+const pool = require("./pool");
 
 /**
  * Create an FTC_REQUEST event in the `event` table.
@@ -8,22 +9,22 @@ const npradb = require("./db"); // your dynamic CRUD + transaction helpers
  * @param {Object} record - Data needed to create the new event.
  * @returns {Object} The newly created event row.
  */
-async function createFtcRequest(record) {
-  const client = await npradb.beginTransaction();
+async function createFtcRequest(record,client) {
+
   try {
     // payload for the new event
     const ftcPayload = {
       accountToCredit: record.src_account_number,
       accountToDebit: record.dest_account_number,
       channelCode: CHANNEL_CODE,
-      dateTime: record.request_timestamp,
+      dateTime: record.request_timestamp, //autogenerate here
       destBank: record.src_bank_code,
       functionCode: FTC_CODE,
       narration: record.narration,
       originBank: record.dest_bank_code,
       callbackUrl: CALLBACK_URL,
-      sessionId: record.session_id,
-      trackingNumber: record.tracking_number,
+      sessionId: record.session_id, //autogenerate here
+      trackingNumber: record.tracking_number, //autogenerate here
       amount: record.amount,
       nameToCredit: record.dest_account_name,
       nameToDebit: record.dest_account_name
@@ -53,10 +54,10 @@ async function createFtcRequest(record) {
     // Use npradb.Create with the transaction client
     const newFtc = await npradb.Create(eventPayload, "event", null, client);
 
-    await npradb.commitTransaction(client);
+
     return newFtc;
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err; // bubble up the error
   }
 }
@@ -65,8 +66,8 @@ async function createFtcRequest(record) {
  * Mark an event/callback as FAILED and enqueue a job in `job_queue`.
  * @param {Object} record - Must contain `event_id`, `callback_id`, etc.
  */
-async function markFailedAndEnqueueJob(record) {
-  const client = await npradb.beginTransaction();
+async function markFailedAndEnqueueJob(record, client) {
+
   try {
     // 1) Update event -> FAILED
     if (record.event_id) {
@@ -97,10 +98,10 @@ async function markFailedAndEnqueueJob(record) {
     };
     await npradb.Create({ payload: jobPayload }, "job_queue", null, client);
 
-    await npradb.commitTransaction(client);
+
     console.log("Event & callback marked FAILED, job enqueued.");
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err;
   }
 }
@@ -108,8 +109,8 @@ async function markFailedAndEnqueueJob(record) {
 /**
  * Mark an event & callback as COMPLETED in a single transaction.
  */
-async function markEventAndCallbackAsComplete(eventId, callbackId) {
-  const client = await npradb.beginTransaction();
+async function markEventAndCallbackAsComplete(eventId, callbackId, client) {
+
   try {
     if (eventId) {
       await npradb.Update({ status: "COMPLETED" }, "event", "event_id", eventId, client);
@@ -124,18 +125,18 @@ async function markEventAndCallbackAsComplete(eventId, callbackId) {
       );
     }
 
-    await npradb.commitTransaction(client);
+
     console.log(`Event ${eventId} & Callback ${callbackId} => COMPLETED`);
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err;
   }
 }
 /**
  * Create a new "outgoing" callback record.
  */
-async function createOutgoingCallback(record) {
-  const client = await npradb.beginTransaction();
+async function createOutgoingCallback(record, client) {
+
   try {
     const payload = {
       payload: record.payload || {},  // JSONB of the callback info
@@ -145,20 +146,20 @@ async function createOutgoingCallback(record) {
     };
 
     const newCallback = await npradb.Create(payload, "callback", null, client);
-    await npradb.commitTransaction(client);
+
 
     console.log("Created outgoing callback:", newCallback.id);
     return newCallback;
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err;
   }
 }
 /**
  * Add a new job to the job_queue.
  */
-async function sendJobToQueue(record) {
-  const client = await npradb.beginTransaction();
+async function sendJobToQueue(record, client) {
+
   try {
     const jobPayload = {
       type: "OUTGOING_CALLBACK",
@@ -166,11 +167,11 @@ async function sendJobToQueue(record) {
     };
     const newJob = await npradb.Create({ payload: jobPayload }, "job_queue", null, client);
 
-    await npradb.commitTransaction(client);
+
     console.log("Enqueued job:", newJob.id);
     return newJob;
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err;
   }
 }
@@ -178,8 +179,8 @@ async function sendJobToQueue(record) {
 /**
  * Mark an event & callback as SUCCESS in one transaction.
  */
-async function markSuccess(eventId, callbackId) {
-  const client = await npradb.beginTransaction();
+async function markSuccess(eventId, callbackId, client) {
+
   try {
     if (eventId) {
       await npradb.Update({ status: "SUCCESS" }, "event", "event_id", eventId, client);
@@ -188,10 +189,10 @@ async function markSuccess(eventId, callbackId) {
       await npradb.Update({ status: "SUCCESS" }, "callback", "callback_id", callbackId, client);
     }
 
-    await npradb.commitTransaction(client);
+
     console.log(`Event ${eventId} & Callback ${callbackId} => SUCCESS`);
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err;
   }
 }
@@ -199,8 +200,8 @@ async function markSuccess(eventId, callbackId) {
 /**
  * Mark event & callback as FAILED in one transaction (no job queue insertion).
  */
-async function markFailed(eventId, callbackId) {
-  const client = await npradb.beginTransaction();
+async function markFailed(eventId, callbackId, client) {
+
   try {
     if (eventId) {
       await npradb.Update({ status: "FAILED" }, "event", "event_id", eventId, client);
@@ -209,10 +210,10 @@ async function markFailed(eventId, callbackId) {
       await npradb.Update({ status: "FAILED" }, "callback", "callback_id", callbackId, client);
     }
 
-    await npradb.commitTransaction(client);
+
     console.log(`Event ${eventId} & Callback ${callbackId} => FAILED`);
   } catch (err) {
-    await npradb.rollbackTransaction(client);
+
     throw err;
   }
 }
@@ -220,8 +221,7 @@ async function markFailed(eventId, callbackId) {
 /**
  * Mark event & callback as TSQ_STATE, also set event.tsq_state = true if that column exists.
  */
-async function markTsqState(eventId, callbackId) {
-  const client = await npradb.beginTransaction();
+async function markTsqState(eventId, callbackId, client) {
   try {
     if (eventId) {
       await npradb.Update(
@@ -241,23 +241,19 @@ async function markTsqState(eventId, callbackId) {
         client
       );
     }
-
-    await npradb.commitTransaction(client);
     console.log(`Event ${eventId} & Callback ${callbackId} => TSQ_STATE`);
   } catch (err) {
-    await npradb.rollbackTransaction(client);
     throw err;
   }
 }
 
 /**
  * Perform the TSQ check (Status Query).
- * Usually an external API call. Returns a final status code or actionCode.
- * This may not need a transaction unless you plan to do DB writes here.
+ * GIP API call. Returns a final status code or actionCode.
  */
-async function performTsqCheck(record) {
+async function performTsqCheck(record, client) {
   try {
-    // Example: Make an HTTP request to your "Processor"
+    // Example: Make an HTTP request to  "GIP"
     // const response = await axios.post('https://processor.example.com/tsq', { record });
     // let finalStatus = response.data.action_code;
     // return finalStatus;
@@ -280,62 +276,79 @@ async function performTsqCheck(record) {
  * Fetch pending FTD callbacks by joining callback + event tables.
  */
 const fetchFtdPendingCallbacks = async () => {
-  const client = await npradb.beginTransaction();
-  try {
-    const sql = `
-        SELECT 
-        c.*, 
-        e.*,
-        c.action_code,
-        e.action_code AS event_action_code
-        FROM callback c
-        JOIN event e ON e.session_id = c.session_id
-        WHERE c.status = 'PENDING'
-          AND e.event_name = 'FTD_REQUEST'
-          AND e.tsq_state = false
-        LIMIT 20
-      `;
-    const { rows } = await client.query(sql);
-
-    await npradb.commitTransaction(client);
-    return rows;
-  } catch (err) {
-    await npradb.rollbackTransaction(client);
-    throw err;
-  }
+  const sql = `
+    SELECT 
+      c.*, 
+      e.*,
+      c.action_code,
+      e.action_code AS event_action_code
+    FROM callback c
+    JOIN event e ON e.session_id = c.session_id
+    WHERE c.status = 'PENDING'
+      AND e.event_name = 'FTD_REQUEST'
+      AND e.tsq_state = false
+    LIMIT 20
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
 };
 
+// ---------- fetchFtdTsqRecords ----------
+const fetchFtdTsqRecords = async () => {
+  const sql = `
+    SELECT 
+      c.*, 
+      e.*,
+      c.action_code,
+      e.action_code AS event_action_code
+    FROM callback c
+    JOIN event e ON e.session_id = c.session_id
+    WHERE c.status = 'TSQ_STATE'
+      AND e.event_name = 'FTD_REQUEST'
+      AND e.tsq_state = true
+    LIMIT 20
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
+};
 
+// ---------- fetchFtcTsqRecords ----------
+const fetchFtcTsqRecords = async () => {
+  const sql = `
+    SELECT 
+      c.*, 
+      e.*,
+      c.action_code,
+      e.action_code AS event_action_code
+    FROM callback c
+    JOIN event e ON e.session_id = c.session_id
+    WHERE c.status = 'TSQ_STATE'
+      AND e.event_name = 'FTC_REQUEST'
+      AND e.tsq_state = true
+    LIMIT 20
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
+};
 
-/**
- * Fetch pending FTD callbacks by joining callback + event tables.
- */
+// ---------- fetchFtcPendingCallbacks ----------
 const fetchFtcPendingCallbacks = async () => {
-  const client = await npradb.beginTransaction();
-  try {
-    const sql = `
-        SELECT 
-        c.*, 
-        e.*,
-        c.action_code,
-        e.action_code AS event_action_code
-        FROM callback c
-JOIN event e ON e.session_id = c.session_id
-      WHERE c.status = 'PENDING'
-        AND e.event_name = 'FTC_REQUEST'
-        AND e.tsq_state = false
-      LIMIT 20
-      `;
-    const { rows } = await client.query(sql);
-
-    await npradb.commitTransaction(client);
-    return rows;
-  } catch (err) {
-    await npradb.rollbackTransaction(client);
-    throw err;
-  }
+  const sql = `
+    SELECT 
+      c.*, 
+      e.*,
+      c.action_code,
+      e.action_code AS event_action_code
+    FROM callback c
+    JOIN event e ON e.session_id = c.session_id
+    WHERE c.status = 'PENDING'
+      AND e.event_name = 'FTC_REQUEST'
+      AND e.tsq_state = false
+    LIMIT 20
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
 };
-
 /**
  * Save (create) a new outgoing callback record in the `callback` table.
  * Uses a transaction with beginTransaction/commitTransaction/rollbackTransaction.
@@ -366,9 +379,7 @@ async function saveOutgoingCallback(record, client = null) {
       retries: 0,
       callback_url: record.callback
     };
-    console.log('RECORD',record);
-    
-    
+
 
     // Simply create the record using npradb.Create without wrapping in a new transaction
     const newCallback = await npradb.Create(payload, "job_queue", null, usedClient);
@@ -394,5 +405,7 @@ module.exports = {
   performTsqCheck,
   fetchFtdPendingCallbacks,
   fetchFtcPendingCallbacks,
+  fetchFtcTsqRecords,
+  fetchFtdTsqRecords,
   saveOutgoingCallback
 }

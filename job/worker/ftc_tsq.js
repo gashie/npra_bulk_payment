@@ -1,4 +1,5 @@
-const {markTsqState, markFailed, sendJobToQueue, markSuccess, createOutgoingCallback } = require("../db/query");
+const npradb = require("../db/db");
+const {markTsqState, markFailed, sendJobToQueue, markSuccess, createOutgoingCallback, fetchFtcTsqRecords } = require("../db/query");
 
 /**
  * Helper function to sleep for a given number of milliseconds.
@@ -32,25 +33,30 @@ async function ftcTsqWorker() {
   }
   
   async function processFtcTsqRecord(record) {
+    const client = await npradb.beginTransaction();
     try {
       // Check status from external or internal system
-      const finalStatus = await performTsqCheck(record);
+      const finalStatus = await performTsqCheck(record,client);
   
       if (finalStatus === 'FAILED') {
-        await markFailed(record.event_id, record.callback_id);
+        await markFailed(record.event_id, record.callback_id,client);
       } else if (['909', '912', null, '990'].includes(finalStatus)) {
-        await markTsqState(record.event_id, record.callback_id);
+        await markTsqState(record.event_id, record.callback_id,client);
       } else if (['000'].includes(finalStatus)) {
-        await createOutgoingCallback(record);
-        await sendJobToQueue(record);
-        await markSuccess(record.event_id, record.callback_id);
+        await createOutgoingCallback(record,client);
+        await sendJobToQueue(record,client);
+        await markSuccess(record.event_id, record.callback_id,client);
       } else {
         // fallback
-        await markFailed(record.event_id, record.callback_id);
+        await markFailed(record.event_id, record.callback_id,client);
       }
+      // Finally, commit once
+          await npradb.commitTransaction(client);
     } catch (error) {
+        // Roll back if anything goes wrong
+            await npradb.rollbackTransaction(client);
       console.error(`Error processing FTC TSQ record ${record.id}:`, error);
-      await markFailed(record.event_id, record.callback_id);
+      await markFailed(record.event_id, record.callback_id,client);
     }
   }
   

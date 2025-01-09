@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { fetchFtdPendingCallbacks, createFtcRequest, markEventAndCallbackAsComplete, markTsqState, markFailedAndEnqueueJob, markFailed } = require('../db/query');
+const npradb = require('../db/db');
 
 
 /**
@@ -36,29 +37,34 @@ async function ftdWorker() {
 }
 
 async function processFtdRecord(record) {
+  const client = await npradb.beginTransaction();
   try {
     // Extract actionCode from callback or event
     const actionCode = record.action_code;
 
     // Step 1: If actionCode in [000, 001], create new FTC event, push
     if (['000'].includes(actionCode)) {
-      await createFtcRequest(record);
+      await createFtcRequest(record, client);
       // Optionally update record status to COMPLETED
-      await markEventAndCallbackAsComplete(record.event_id, record.callback_id);
+      await markEventAndCallbackAsComplete(record.event_id, record.callback_id, client);
     }
     // Step 2: If actionCode in [909, 912, null, 990]
     else if (['909', '912', null, '990'].includes(actionCode)) {
-      await markTsqState(record.event_id, record.callback_id); // sets event.tsq_state = true, etc.
+      await markTsqState(record.event_id, record.callback_id, client); // sets event.tsq_state = true, etc.
     }
     // Step 3: Otherwise => set to FAILED, create outgoing callback
     else {
       console.log("record failed");
 
-      await markFailedAndEnqueueJob(record);
+      await markFailedAndEnqueueJob(record, client);
     }
+    // Finally, commit once
+    await npradb.commitTransaction(client);
   } catch (error) {
+    // Roll back if anything goes wrong
+    await npradb.rollbackTransaction(client);
     console.error(`Error processing FTD record ${record.event_id}:`, error);
-    await markFailed(record.event_id, record.callback_id);
+    await markFailed(record.event_id, record.callback_id, client);
   }
 }
 
