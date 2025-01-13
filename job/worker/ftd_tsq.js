@@ -1,64 +1,63 @@
+// ftdTsqWorker.js
 const npradb = require("../db/db");
-const { markFailedAndEnqueueJob, markEventAndCallbackAsComplete, markTsqState, markFailed, fetchFtdTsqRecords } = require("../db/query");
+const { fetchFtdTsqRecords, updateTsqIteration, markFailedAndEnqueueJob, markEventAndCallbackAsComplete, markTsqState, markFailed, createFtcRequest } = require("../db/query");
+const config = require("./config.json"); // { tsq: { intervalMinutes, maxIterations } }
 
-/**
- * Helper function to sleep for a given number of milliseconds.
- * Useful for throttling loops or retry logic.
- */
 function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-  
-  
-  
-  
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function ftdTsqWorker() {
-    while (true) {
-      try {
-        const ftdTsqRecords = await fetchFtdTsqRecords();
-  
-        if (ftdTsqRecords.length === 0) {
-          await sleep(5000);
-          continue;
-        }
-  
-        for (const record of ftdTsqRecords) {
-          await processFtdTsqRecord(record);
-        }
-      } catch (err) {
-        console.error('Error in ftdTsqWorker loop:', err);
-        await sleep(5000);
-      }
-    }
-  }
-  
-  async function processFtdTsqRecord(record) {
-     const client = await npradb.beginTransaction();
+  while (true) {
     try {
-      // 1. Perform API request or internal logic to re-check the transaction status
-      const finalStatus = await performTsqCheck(record,client);
-  
-      if (finalStatus === 'FAILED') {
-        await markFailedAndEnqueueJob(record,client);
-      } else if (['000'].includes(finalStatus)) {
-        // create new FTC_REQUEST
-        await createFtcRequest(record,client);
-        // possibly update the record to COMPLETED
-        await markEventAndCallbackAsComplete(record.event_id, record.callback_id,client);
-      } else {
-        // If finalStatus in [909, 912, null, 990], or anything else
-        // Keep in TSQ_STATE or do whatever next step is needed
-        await markTsqState(record.event_id, record.callback_id,client);
+      const ftdTsqRecords = await fetchFtdTsqRecords(); // read-only select, no transaction
+
+      if (ftdTsqRecords.length === 0) {
+        await sleep(5000);
+        continue;
       }
-          // Finally, commit once
-          await npradb.commitTransaction(client);
-    } catch (error) {
-            // Roll back if anything goes wrong
-            await npradb.rollbackTransaction(client);
-      console.error(`Error processing FTD TSQ record ${record.id}:`, error);
-      await markFailed(record.event_id, record.callback_id,client);
+
+      for (const record of ftdTsqRecords) {
+        await processFtdTsqRecord(record);
+      }
+    } catch (err) {
+      console.error("Error in ftdTsqWorker loop:", err);
+      await sleep(5000);
     }
   }
-  
-  module.exports = ftdTsqWorker
+}
+
+async function processFtdTsqRecord(record) {
+  const client = await npradb.beginTransaction();
+  try {
+    const finalStatus = await performTsqCheck(record, client);
+
+    if (finalStatus === "FAILED") {
+      await markFailedAndEnqueueJob(record, client);
+    } else if (["000"].includes(finalStatus)) {
+      await createFtcRequest(record, client);
+      await markEventAndCallbackAsComplete(record.event_id, record.callback_id, client);
+    } else if (["909", "912", null, "990"].includes(finalStatus)) {
+      // If we've hit max TSQ attempts, fail; else remain in TSQ
+      if ((record.tsq_attempts || 0) >= config.tsq.maxIterations) {
+        await markFailedAndEnqueueJob(record, client);
+      } else {
+        // increment TSQ attempt, remain TSQ
+        await updateTsqIteration(record, client);  // e.g. increments a tsq_attempts column by 1
+        await markTsqState(record.event_id, record.callback_id, client);
+      }
+    } else {
+      // fallback
+      await markFailed(record.event_id, record.callback_id, client);
+    }
+
+    await npradb.commitTransaction(client);
+  } catch (error) {
+    await npradb.rollbackTransaction(client);
+    console.error(`Error processing FTD TSQ record ${record.id}:`, error);
+    await markFailed(record.event_id, record.callback_id, client);
+  }
+}
+
+module.exports = ftdTsqWorker;
+

@@ -393,6 +393,21 @@ async function saveOutgoingCallback(record, client = null) {
 }
 
 
+async function updateTsqIteration(record, client) {
+  // example: increment attempts, set next tsq time
+  await npradb.Update(
+    { 
+      tsq_attempts: (record.tsq_attempts || 0) + 1,
+      next_tsq_time: new Date(Date.now() + config.tsq.intervalMinutes * 60_000)
+    },
+    "event",
+    "id",
+    record.event_id,
+    client
+  );
+}
+
+
 module.exports = {
   createFtcRequest,
   markFailedAndEnqueueJob,
@@ -407,5 +422,6 @@ module.exports = {
   fetchFtcPendingCallbacks,
   fetchFtcTsqRecords,
   fetchFtdTsqRecords,
-  saveOutgoingCallback
+  saveOutgoingCallback,
+  updateTsqIteration
 }
