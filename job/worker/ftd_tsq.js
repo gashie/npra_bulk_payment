@@ -1,7 +1,20 @@
 // ftdTsqWorker.js
+const { gipTsqUrl } = require("../../config/config");
+const { addItem } = require("../../helper/dynamic");
+const { makeGipRequestService } = require("../../services/request");
 const npradb = require("../db/db");
-const { fetchFtdTsqRecords, updateTsqIteration, markFailedAndEnqueueJob, markEventAndCallbackAsComplete, markTsqState, markFailed, createFtcRequest } = require("../db/query");
+const {
+  fetchFtdTsqRecords,
+  updateTsqIteration,
+  markFailedAndEnqueueJob,
+  markEventAndCallbackAsComplete,
+  markTsqState,
+  markFailed,
+  createFtcRequest,
+} = require("../db/query");
 const config = require("./config.json"); // { tsq: { intervalMinutes, maxIterations } }
+const { tsqPayload } = require("../../validation/schema");
+const globalEventEmitter = require("../../utils/eventEmitter");
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,20 +43,40 @@ async function ftdTsqWorker() {
 async function processFtdTsqRecord(record) {
   const client = await npradb.beginTransaction();
   try {
-    const finalStatus = await performTsqCheck(record, client);
+    const apiResult = await makeGipRequestService(record, gipTsqUrl);
 
-    if (finalStatus === "FAILED") {
-      await markFailedAndEnqueueJob(record, client);
-    } else if (["000"].includes(finalStatus)) {
+    let finalStatus = apiResult?.response;
+    // if (finalStatus === "FAILED") {
+    //   await markFailedAndEnqueueJob(record, client);
+    // } else
+
+    if (["000"].includes(finalStatus.actionCode)) {
       await createFtcRequest(record, client);
-      await markEventAndCallbackAsComplete(record.event_id, record.callback_id, client);
-    } else if (["909", "912", null, "990"].includes(finalStatus)) {
+      await markEventAndCallbackAsComplete(
+        record.event_id,
+        record.callback_id,
+        client
+      );
+    } else if (["909", "912", null, "990"].includes(finalStatus.actionCode)) {
+      //save the tsq event in tsq and retry tracking table
+
       // If we've hit max TSQ attempts, fail; else remain in TSQ
       if ((record.tsq_attempts || 0) >= config.tsq.maxIterations) {
         await markFailedAndEnqueueJob(record, client);
       } else {
         // increment TSQ attempt, remain TSQ
-        await updateTsqIteration(record, client);  // e.g. increments a tsq_attempts column by 1
+        let tsqRetryPayload = {
+          tsq_payload: record,
+          tsq_response: apiResult.response,
+          session_id: apiResult.response.sessionId,
+          details: "TSQ STATE",
+          action_code: apiResult.response.actionCode,
+          callback_id: record.callback_id,
+        };
+
+        globalEventEmitter.emit("NEC", tsqRetryPayload);
+
+        await updateTsqIteration(record, client); // e.g. increments a tsq_attempts column by 1
         await markTsqState(record.event_id, record.callback_id, client);
       }
     } else {
@@ -60,4 +93,3 @@ async function processFtdTsqRecord(record) {
 }
 
 module.exports = ftdTsqWorker;
-

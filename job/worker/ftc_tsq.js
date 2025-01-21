@@ -1,6 +1,16 @@
 // ftcTsqWorker.js
+const { gipTsqUrl } = require("../../config/config");
+const { makeGipRequestService } = require("../../services/request");
 const npradb = require("../db/db");
-const { fetchFtcTsqRecords, updateTsqIteration, markTsqState, markFailed, sendJobToQueue, markSuccess, createOutgoingCallback } = require("../db/query");
+const {
+  fetchFtcTsqRecords,
+  updateTsqIteration,
+  markTsqState,
+  markFailed,
+  sendJobToQueue,
+  markSuccess,
+  createOutgoingCallback,
+} = require("../db/query");
 const config = require("./config.json");
 
 function sleep(ms) {
@@ -30,7 +40,7 @@ async function ftcTsqWorker() {
 async function processFtcTsqRecord(record) {
   const client = await npradb.beginTransaction();
   try {
-    const finalStatus = await performTsqCheck(record, client);
+    const finalStatus = await makeGipRequestService(record, gipTsqUrl);
 
     if (finalStatus === "FAILED") {
       await markFailed(record.event_id, record.callback_id, client);
@@ -58,4 +68,3 @@ async function processFtcTsqRecord(record) {
 }
 
 module.exports = ftcTsqWorker;
-
