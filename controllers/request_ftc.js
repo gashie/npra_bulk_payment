@@ -79,7 +79,7 @@ exports.sendRequest = asynHandler(async (req, res) => {
   eventTimelinePayload = {
     transaction_id: requestResult.id,
     event_type: requestResult.request_type,
-    event_details: "FTD created",
+    event_details: "FTD_CREATED",
     status: "PENDING",
     remarks: requestResult.id,
   };
@@ -183,8 +183,8 @@ exports.sendTsqRequest = asynHandler(async (req, res) => {
   eventTimelinePayload = {
     transaction_id: result.rows[0].id,
     event_type: result.rows[0].request_type,
-    event_details: "TSQ created",
-    status: "PENDING",
+    event_details: "TSQ_FETCHED",
+    status: codeDetails.code === "000" ? "SUCCESSFUL" : "FAILED",
     remarks: result.rows[0].id,
   };
 
