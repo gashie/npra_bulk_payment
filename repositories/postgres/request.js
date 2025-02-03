@@ -1,4 +1,5 @@
 const { addItem, getItemById, getItems, updateItem } = require('../../helper/dynamic');
+const npradb = require('../../model/Global');
 const { uniqueIds } = require('../../model/Request');
 
 
@@ -47,6 +48,45 @@ async function generateRef(reference_number) {
     let results = await uniqueIds(reference_number);
     return results
 }
+
+async function dynamicReports(queryName, requestBody) {
+    // 1. Fetch from saved_queries
+    const fetchSql = `SELECT base_query, conditions FROM saved_queries WHERE query_name = $1`;
+    const result = await dmsdb.Execute(fetchSql, [queryName]);
+    if (result.rows.length === 0) {
+      throw new Error(`No saved query found for "${queryName}"`);
+    }
+  
+    const { base_query, conditions } = result.rows[0];
+    let query = base_query;
+    let values = [];
+    let whereClauses = [];
+  
+    // 2. Parse conditions (assume it's an array of {column, operator, value})
+    if (conditions && Array.isArray(conditions)) {
+      conditions.forEach((cond, idx) => {
+        // e.g., cond.value = ":id" means pull requestBody.id
+        const paramKey = cond.value.startsWith(':')
+          ? cond.value.slice(1)
+          : cond.value;
+        const paramValue = requestBody[paramKey];
+  
+        if (paramValue !== undefined) {
+          whereClauses.push(`"${cond.column}" ${cond.operator} $${values.length + 1}`);
+          values.push(paramValue);
+        }
+      });
+  
+      // If we have whereClauses, append them
+      if (whereClauses.length > 0) {
+        query += ' WHERE ' + whereClauses.join(' AND ');
+      }
+    }
+  
+    // 3. Execute final query
+    const finalResult = await npradb.Execute(query, values);
+    return finalResult.rows;
+  }
 module.exports = {
     saveRequests,
     findReference,
@@ -54,5 +94,6 @@ module.exports = {
     saveJob,
     findUniqueReference,
     saveCallback,
-    saveEvents
+    saveEvents,
+    dynamicReports
 };

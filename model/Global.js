@@ -90,4 +90,22 @@ npradb.Update = (values, table, fieldname, fiedlvalue) => {
     });
 };
 
+npradb.Execute = (sql, values, client = null) => {
+    return new Promise((resolve, reject) => {
+        const queryOptions = {
+            text: sql,
+            values: values
+        };
+
+        const executeQuery = client ? client.query(queryOptions) : pool.query(queryOptions);
+
+        executeQuery
+            .then(results => resolve(results))
+            .catch(err => {
+                logger.error(err);
+                reject(err);
+            });
+    });
+};
+
 module.exports = npradb
