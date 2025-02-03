@@ -3,6 +3,7 @@ const asynHandler = require("../middleware/async");
 const { sendResponse } = require("../utils/utilfunc");
 const { toSnakeCase } = require("../helper/func");
 const { saveCallbackService } = require("../services/request");
+const globalEventEmitter = require("../utils/eventEmitter");
 
 exports.createInstitution = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
@@ -35,7 +36,10 @@ exports.viewInstitutions = asynHandler(async (req, res) => {
 exports.updateInstitution = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
 
-  const runupdate = await institionService.updateInstitutionService(payload, payload.id);
+  const runupdate = await institionService.updateInstitutionService(
+    payload,
+    payload.id
+  );
 
   if (runupdate.rowCount == 1) {
     return sendResponse(res, 1, 200, "Record Updated", []);
@@ -47,7 +51,10 @@ exports.updateInstitution = asynHandler(async (req, res) => {
 exports.deleteInstitution = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
 
-  const runupdate = await institionService.updateInstitutionService(payload, payload.id);
+  const runupdate = await institionService.updateInstitutionService(
+    payload,
+    payload.id
+  );
 
   if (runupdate.rowCount == 1) {
     return sendResponse(res, 1, 200, "Record Deleted", []);
@@ -76,8 +83,18 @@ exports.createCallback = asynHandler(async (req, res) => {
     account_to_debit: payload?.account_to_debit,
     account_to_credit: payload?.account_to_credit,
     incoming_url: req.url,
-  }
+  };
   const result = await saveCallbackService(body);
+
+  eventTimelinePayload = {
+    transaction_id: result.rows[0].callback_id,
+    event_type: "FT CALLBACK",
+    event_details: "Callback Acknowledged",
+    status: "PENDING",
+    remarks: result.rows[0].callback_id,
+  };
+
+  await globalEventEmitter.emit("EVENT_TIMELINE", eventTimelinePayload);
 
   if (result.rowCount == 1) {
     return sendResponse(res, 1, 200, "Record Saved", []);
@@ -92,11 +109,13 @@ exports.createCallback = asynHandler(async (req, res) => {
   }
 });
 exports.testCallback = asynHandler(async (req, res) => {
-  return sendResponse(res, 1, 200, "Record Saved", [{
-    "srcBankCode": "300307",
-    "srcAccountNumber": "0011010104334",
-    "referenceNumber": "6876987987",
-    "requestTimestamp": "2023-12-03 11:02:00",
-    "sessionId": "516947236717",
-  }]);
+  return sendResponse(res, 1, 200, "Record Saved", [
+    {
+      srcBankCode: "300307",
+      srcAccountNumber: "0011010104334",
+      referenceNumber: "6876987987",
+      requestTimestamp: "2023-12-03 11:02:00",
+      sessionId: "516947236717",
+    },
+  ]);
 });

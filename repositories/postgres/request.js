@@ -13,6 +13,15 @@ async function saveEvents(payload) {
     let results = await addItem('event', payload);
     return results
 }
+async function saveEventTimeLine(payload) {
+    let results = await addItem('request_logs', payload);
+    return results
+}
+async function saveTSQLogs(payload) {
+    let results = await addItem('tsq_logs', payload);
+    return results
+}
+
 async function saveCallback(payload) {
     let results = await addItem('callback', payload);
     return results
@@ -95,5 +104,6 @@ module.exports = {
     findUniqueReference,
     saveCallback,
     saveEvents,
-    dynamicReports
+    saveEventTimeLine,
+    saveTSQLogs
 };

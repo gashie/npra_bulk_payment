@@ -7,6 +7,7 @@ const institutionController = require("../controllers/institutions");
 const settlementAccountController = require("../controllers/settlement_accounts")
 const reportController = require("../controllers/reports")
 const approvalController = require("../controllers/approval");
+const reportsController = require("../controllers/reports")
 // const ipAccessMiddleware = require("../middleware/ipmiddleware");
 const { NecValidator, ftdValidator, tsqValidator } = require("../middleware/validator");
 const verifyToken = require("../middleware/keycloak");
@@ -25,7 +26,7 @@ router.post("/view-settlement-accounts", settlementAccountController.viewSettlem
 router.post("/update-settlement-account", settlementAccountController.updateSettlementAccount);
 router.post("/delete-settlement-account", settlementAccountController.deleteSettlementAccount);
 
-router.post("/report", reportController.mainReportController);
+// router.post("/report", reportController.mainReportController);
 
 router.post("/approval", approvalController.ApproveOrDeny);
 router.post("/debit/v1/callback", institutionController.createCallback);
@@ -34,5 +35,6 @@ router.post("/debit/v1/callback", institutionController.createCallback);
 router.post("/debit/v1/test/ne",NecValidator, requestController.sendRequest);
 router.post("/debit/v1/test/ft",ftdValidator,requestftcController.sendRequest);
 router.post("/debit/v1/test/tsq",tsqValidator, requestftcController.sendTsqRequest);
+router.post("/debit/v1/test/report", reportController.TransactionReport)
 
 module.exports = router;

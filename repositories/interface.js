@@ -24,7 +24,8 @@ const EXPECTED_FUNCTIONS = [
   "gipGeneral",
   "saveCallback",
   "saveEvents",
-  "dynamicReports"
+  "saveEventTimeLine",
+  "saveTSQLogs",
 ];
 
 module.exports = EXPECTED_FUNCTIONS;

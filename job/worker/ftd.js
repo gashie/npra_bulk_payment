@@ -41,10 +41,10 @@ async function processFtdRecord(record) {
   try {
     // Extract actionCode from callback or event
     const actionCode = record.action_code;
-
+  
     // Step 1: If actionCode in [000, 001], create new FTC event, push
     if (['000'].includes(actionCode)) {
-      await createFtcRequest(record, client);
+      await createFtcRequest(record, client, record.callback_id);
       // Optionally update record status to COMPLETED
       await markEventAndCallbackAsComplete(record.event_id, record.callback_id, client);
     }

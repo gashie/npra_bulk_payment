@@ -23,16 +23,34 @@ async function saveEventService(config) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.saveEvents(config);
 }
+async function saveEventTimelineService(config) {
+  const type = "request"; // Define a default or specific type here
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.saveEventTimeLine(config);
+}
+async function saveTSQLogs(config) {
+  console.log("inside tsq service info", config);
 
-
+  const type = "request"; // Define a default or specific type here
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.saveTSQLogs(config);
+}
 async function findReferenceService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.findReference(reference);
 }
 
-async function findUniqueReferenceService(reference_number, src_bank_code, request_timestamp) {
+async function findUniqueReferenceService(
+  reference_number,
+  src_bank_code,
+  request_timestamp
+) {
   const repository = repositoryFactory.getRepository(dbType, type);
-  return await repository.findUniqueReference(reference_number, src_bank_code, request_timestamp);
+  return await repository.findUniqueReference(
+    reference_number,
+    src_bank_code,
+    request_timestamp
+  );
 }
 async function uniqueIdGeneratorService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
@@ -47,7 +65,6 @@ async function makeGipRequestService(payload, url) {
   const repository = repositoryFactory.getRepository("api", "gip");
   return await repository.gipGeneral(payload, url);
 }
-
 
 async function makeRtgsRequestService(payload, srcBankCode, destBankCode) {
   const repository = repositoryFactory.getRepository("api", "rtgs");
@@ -69,8 +86,7 @@ async function reportService(query) {
 }
 
 async function logEvents(payload) {
-  console.log('Service---- NAME_ENQUIRY event:', payload);
-
+  console.log("Service---- NAME_ENQUIRY event:", payload);
 }
 
 module.exports = {
@@ -87,5 +103,7 @@ module.exports = {
   logEvents,
   makeGipRequestService,
   saveCallbackService,
-  saveEventService
+  saveEventService,
+  saveEventTimelineService,
+  saveTSQLogs,
 };
