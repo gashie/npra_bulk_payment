@@ -105,5 +105,6 @@ module.exports = {
     saveCallback,
     saveEvents,
     saveEventTimeLine,
-    saveTSQLogs
+    saveTSQLogs,
+    dynamicReports
 };

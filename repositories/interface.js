@@ -26,6 +26,7 @@ const EXPECTED_FUNCTIONS = [
   "saveEvents",
   "saveEventTimeLine",
   "saveTSQLogs",
+  'dynamicReports'
 ];
 
 module.exports = EXPECTED_FUNCTIONS;
