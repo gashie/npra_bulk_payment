@@ -18,7 +18,9 @@ const globalEventEmitter = require("../../utils/eventEmitter");
  * @returns {Object} The newly created event row.
  */
 async function createFtcRequest(record, client, request_id) {
+  
   try {
+     const unique_result = await npradb.uniqueIdNoParam();
     // payload for the new event
     const ftcPayload = {
       accountToCredit: record.src_account_number,
@@ -30,10 +32,10 @@ async function createFtcRequest(record, client, request_id) {
       narration: record.narration,
       originBank: record.dest_bank_code,
       callbackUrl: CALLBACK_URL,
-      sessionId: record.session_id, //autogenerate here
-      trackingNumber: record.tracking_number, //autogenerate here
+      sessionId:  unique_result.rows[0].session_id, //autogenerate here
+      trackingNumber: unique_result.rows[0].tracking_number, //autogenerate here
       amount: record.amount,
-      nameToCredit: record.dest_account_name,
+      nameToCredit: record.src_account_name,
       nameToDebit: record.dest_account_name,
     };
 
@@ -45,17 +47,23 @@ async function createFtcRequest(record, client, request_id) {
       event_response: event_response.response,
       status: "PENDING",
       callback: record.callback_url,
-      session_id: record.session_id,
+      session_id: unique_result.rows[0].session_id,
       action_code: event_response.response.actionCode,
-      tracking_number: record.tracking_number,
+      tracking_number: unique_result.rows[0].tracking_number,
       approval_code: event_response.response.actionCode,
-      account_to_debit: record.dest_account_number,
-      account_to_credit: record.src_account_number,
-      name_to_debit: record.src_account_name,
-      name_to_credit: record.dest_account_name,
-      src_bank_code: record.dest_bank_code,
-      dest_bank_code: record.src_bank_code,
-      request_id: request_id,
+      dest_account_number: record.dest_account_number,
+      src_account_number: record.src_account_number,
+      dest_account_name: record.dest_account_name,
+      src_account_name: record.src_account_name,
+      src_bank_code: record.dest_account_number,
+      dest_bank_code: record.src_account_number,
+      request_id: record.request_id,
+      request_date_time:record.request_date_time,
+      request_tracking_number:record.request_tracking_number,
+      parent_event_id:record.event_id,
+      parent_session_id :record.session_id,
+      parent_tracking_number :record.tracking_number,
+      parent_callback_url:record.callback_url,
     };
 
     // Use npradb.Create with the transaction client
@@ -64,9 +72,9 @@ async function createFtcRequest(record, client, request_id) {
     eventTimelinePayload = {
       transaction_id: newFtc.event_id,
       event_type: newFtc.event_name,
-      event_details: "FTC created",
+      event_details: "FTC_CREATED",
       status: "PENDING",
-      remarks: newFtc.id,
+      remarks: newFtc.event_id,
     };
 
     await globalEventEmitter.emit("EVENT_TIMELINE", eventTimelinePayload);

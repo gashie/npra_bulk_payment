@@ -39,6 +39,10 @@ async function findReferenceService(reference) {
   const repository = repositoryFactory.getRepository(dbType, type);
   return await repository.findReference(reference);
 }
+async function uniqueIdGeneratorNoParamService() {
+  const repository = repositoryFactory.getRepository(dbType, type);
+  return await repository.generateRefNoParam();
+}
 
 async function findUniqueReferenceService(
   reference_number,
@@ -106,4 +110,5 @@ module.exports = {
   saveEventService,
   saveEventTimelineService,
   saveTSQLogs,
+  uniqueIdGeneratorNoParamService
 };

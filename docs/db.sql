@@ -247,3 +247,33 @@ CREATE TABLE callback (
     incoming_url        VARCHAR(255),                   -- URL the callback came from
     outgoing_url        VARCHAR(255)                    -- URL we send callback to
 );
+CREATE OR REPLACE FUNCTION public.generate_unique_ids()
+RETURNS TABLE(session_id BIGINT, tracking_number BIGINT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_session_id BIGINT;
+    v_tracking_number BIGINT;
+BEGIN
+    LOOP
+        -- Generate a 12-digit session_id and a 6-digit tracking_number using random numbers.
+        v_session_id := (abs(random() * 1e12)::BIGINT) + 100000000000;
+        v_tracking_number := (abs(random() * 1e6)::BIGINT) + 100000;
+        
+        -- Check that these values do not already exist in the event table.
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM event e
+            WHERE e.session_id = v_session_id::text
+               OR e.tracking_number = v_tracking_number::text
+        ) THEN
+            -- Return the generated unique pair.
+            RETURN QUERY SELECT v_session_id, v_tracking_number;
+            RETURN;  -- finish the function
+        END IF;
+    END LOOP;
+END;
+$$;
+
+ALTER FUNCTION public.generate_unique_ids()
+    OWNER TO postgres;

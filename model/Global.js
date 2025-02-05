@@ -108,4 +108,28 @@ npradb.Execute = (sql, values, client = null) => {
     });
 };
 
+npradb.CreateWithTransaction = async (payload, table) => {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN"); // Start transaction
+
+        let columns = Object.keys(payload);
+        let params = Object.values(payload);
+        let fields = columns.toString();
+        let values = prepareColumns(columns);
+        let query = `INSERT INTO ${table} (${fields}) VALUES (${values}) RETURNING *`;
+
+        const result = await client.query(query, params);
+
+        await client.query("COMMIT"); // Commit only if everything succeeds
+        return result.rows[0];
+    } catch (err) {
+        await client.query("ROLLBACK"); // Undo changes if there's an error
+        logger.error(`❌ Transaction Failed in ${table}:`, err);
+        throw new Error(`Transaction Failed: ${err.message}`);
+    } finally {
+        client.release(); // Always release the client
+    }
+};
+
 module.exports = npradb

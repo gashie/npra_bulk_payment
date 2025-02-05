@@ -67,8 +67,10 @@ exports.sendRequest = asynHandler(async (req, res) => {
   payload.response_message = "success";
 
   const result = await requestService.saveReqestService(payload);
-  let requestResult = result.rows[0];
-  await globalEventEmitter.emit(eventName, payload, requestResult.id);
+  let requestResult = result.rows?.[0];
+  console.log(requestResult);
+  
+  await globalEventEmitter.emit(eventName, payload, requestResult);
 
   req.customLog = {
     event: eventName,
@@ -78,7 +80,7 @@ exports.sendRequest = asynHandler(async (req, res) => {
 
   eventTimelinePayload = {
     transaction_id: requestResult.id,
-    event_type: requestResult.request_type,
+    event_type: payload.request_type,
     event_details: "FTD_CREATED",
     status: "PENDING",
     remarks: requestResult.id,

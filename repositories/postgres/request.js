@@ -1,6 +1,6 @@
 const { addItem, getItemById, getItems, updateItem } = require('../../helper/dynamic');
 const npradb = require('../../model/Global');
-const { uniqueIds } = require('../../model/Request');
+const { uniqueIds,uniqueIdNoParam } = require('../../model/Request');
 
 
 
@@ -57,6 +57,10 @@ async function generateRef(reference_number) {
     let results = await uniqueIds(reference_number);
     return results
 }
+async function generateRefNoParam() {
+  let results = await uniqueIdNoParam();
+  return results
+}
 
 async function dynamicReports(queryName, requestBody) {
     // 1. Fetch from saved_queries
@@ -106,5 +110,6 @@ module.exports = {
     saveEvents,
     saveEventTimeLine,
     saveTSQLogs,
-    dynamicReports
+    dynamicReports,
+    generateRefNoParam
 };

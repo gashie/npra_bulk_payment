@@ -1,20 +1,21 @@
 const { logger } = require('../logs/winston');
 const ErrorResponse = require('../utils/errorResponse');
 
+// Middleware to handle errors
 const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    console.log(err);
+    console.log("🔥 Error caught:", err);
 
-    // Enhanced logging for application-specific file and line numbers
+    // Extract application file and line numbers for better debugging
     const appStackLine = err.stack
         ? err.stack.split('\n').find(line => !line.includes('node_modules') && line.includes(process.cwd()))
         : null;
     const fileName = appStackLine ? appStackLine.match(/\((.*):\d+:\d+\)/)?.[1] : 'Unknown File';
     const lineNumber = appStackLine ? appStackLine.match(/:(\d+):\d+\)/)?.[1] : 'Unknown Line';
 
-    // Specific database errors
+    // Map of database error codes and their messages
     const dbErrors = {
         '23505': 'Duplicate entry found in request',
         '22P02': 'Invalid UUID in request',
@@ -22,12 +23,13 @@ const errorHandler = (err, req, res, next) => {
         '42P01': 'Table does not exist, please check and try again',
     };
 
+    // Handle database errors
     if (dbErrors[err.code]) {
-        error = new ErrorResponse(dbErrors[err.code], 404);
+        error = new ErrorResponse(dbErrors[err.code], 400);
         logger.error({ message: error.message, fileName, lineNumber });
     }
 
-    // Other application-specific errors
+    // Application-specific errors
     const appErrors = {
         'entity.parse.failed': 'Invalid JSON Fields',
         'ER_DBACCESS_DENIED_ERROR': 'Database Access Denied',
@@ -40,21 +42,32 @@ const errorHandler = (err, req, res, next) => {
 
     if (appErrors[err.code] || appErrors[err.type]) {
         const message = appErrors[err.code] || appErrors[err.type];
-        error = new ErrorResponse(message, 404);
+        error = new ErrorResponse(message, 400);
         logger.error({ message, fileName, lineNumber });
-        return res.status(500).json({ status: 0, message });
     }
 
     res.status(error.statusCode || 500).json({
         status: 0,
-        message: error.message || 'Server Error',
+        message: error.message || 'Internal Server Error',
+        file: fileName,
+        line: lineNumber,
     });
 };
 
-// Handle unhandled promise rejections
-const handleRejection = (err) => {
-    logger.error(`Unhandled Rejection: ${err.message}`);
-    process.exit(1); // Restart the app in production
+// Handle unhandled promise rejections globally
+const handleRejection = (reason, promise) => {
+    console.error('🔥 Unhandled Rejection at:', promise, '💥 Reason:', reason);
+    logger.error(`Unhandled Promise Rejection: ${reason.message || reason}`);
+
+    // Do NOT exit in development; instead, just log the error
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1); // Restart only in production
+    }
 };
 
-module.exports = { errorHandler, handleRejection };
+// Middleware to catch async errors (Prevents app from crashing)
+const asyncHandler = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = { errorHandler, handleRejection, asyncHandler };

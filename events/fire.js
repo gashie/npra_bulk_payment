@@ -47,7 +47,7 @@ globalEventEmitter.on("EVENT_TIMELINE", async (payload) => {
   await service.saveEventTimelineService(payload);
 });
 
-globalEventEmitter.on(ftdEventName, async (payload, request_id) => {
+globalEventEmitter.on(ftdEventName, async (payload, requestResult) => {
   try {
     let ftdPayload = {
       accountToCredit: payload.src_account_number,
@@ -65,6 +65,7 @@ globalEventEmitter.on(ftdEventName, async (payload, request_id) => {
       nameToCredit: payload.src_account_name,
       nameToDebit: payload.dest_account_name,
       src_bank_code: payload.src_bank_code,
+      request_id: requestResult.id,
     };
     let event_response = await service.makeGipRequestService(
       ftdPayload,
@@ -82,12 +83,15 @@ globalEventEmitter.on(ftdEventName, async (payload, request_id) => {
       action_code: final_response.actionCode,
       tracking_number: payload.tracking_number,
       approval_code: final_response.actionCode,
-      account_to_debit: payload.dest_account_number,
-      account_to_credit: payload.src_account_number,
-      name_to_debit: payload.dest_account_name,
-      name_to_credit: payload.src_account_name,
+      dest_account_number: payload.dest_account_number,
+      src_account_number: payload.src_account_number,
+      dest_account_name: payload.dest_account_name,
+      src_account_name: payload.src_account_name,
       src_bank_code: payload.src_bank_code,
-      request_id: request_id,
+      request_id: requestResult.id,
+      request_date_time:requestResult.date_time,
+      request_tracking_number:requestResult.tracking_number,
+      dest_bank_code:requestResult.dest_bank_code
     };
     await service.saveEventService(eventPayload);
   } catch (error) {

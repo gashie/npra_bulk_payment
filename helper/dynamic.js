@@ -1,10 +1,12 @@
 // forest.js
+const npradb = require("../job/db/db");
 const GlobalModel = require("../model/Global");
 const systemDate = new Date().toISOString().slice(0, 19).replace("T", " ");
 
 // Function to add a forest
 async function addItem(tableName, payload) {
   // Logic to add new record to the database
+  const client = await npradb.beginTransaction();
   let results = await GlobalModel.Create(payload, tableName, "");
   return results;
 }
