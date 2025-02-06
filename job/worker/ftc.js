@@ -1,5 +1,5 @@
 const npradb = require("../db/db");
-const { markSuccess, markTsqState, markFailed, saveOutgoingCallback, fetchFtcPendingCallbacks } = require("../db/query");
+const { markSuccess, markTsqState, markFailed, saveOutgoingCallback, fetchFtcPendingCallbacks, markFailedError } = require("../db/query");
 
 
 /**
@@ -11,6 +11,8 @@ function sleep(ms) {
 }
 
 async function ftcWorker() {
+    console.log("FTC--WORKING");
+
     while (true) {
         try {
             // 1. Fetch all pending FTC callbacks
@@ -34,6 +36,7 @@ async function ftcWorker() {
 async function processFtcRecord(record) {
     const client = await npradb.beginTransaction();
     try {
+        console.log("FTC--WORKING");
         const actionCode = record.action_code;
 
         // If code is 000 or 001, success
@@ -55,7 +58,7 @@ async function processFtcRecord(record) {
         // Roll back if anything goes wrong
         await npradb.rollbackTransaction(client);
         console.error(`Error processing FTC record ${record.event_id}:`, error);
-        await markFailed(record.event_id, record.callback_id, client);
+        await markFailedError(record.event_id, record.callback_id, client);
     }
 }
 

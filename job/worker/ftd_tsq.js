@@ -21,6 +21,8 @@ function sleep(ms) {
 }
 
 async function ftdTsqWorker() {
+  console.log("FTD-TSQ--WORKING");
+
   while (true) {
     try {
       const ftdTsqRecords = await fetchFtdTsqRecords(); // read-only select, no transaction
@@ -41,8 +43,11 @@ async function ftdTsqWorker() {
 }
 
 async function processFtdTsqRecord(record) {
+
   const client = await npradb.beginTransaction();
   try {
+    console.log("FTD-TSQ--WORKING");
+
     const apiResult = await makeGipRequestService(record, gipTsqUrl);
 
     let finalStatus = apiResult?.response;

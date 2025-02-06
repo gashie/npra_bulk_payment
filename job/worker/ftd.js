@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const { fetchFtdPendingCallbacks, createFtcRequest, markEventAndCallbackAsComplete, markTsqState, markFailedAndEnqueueJob, markFailed } = require('../db/query');
+const { fetchFtdPendingCallbacks, createFtcRequest, markEventAndCallbackAsComplete, markTsqState, markFailedAndEnqueueJob, markFailed, markFailedError } = require('../db/query');
 const npradb = require('../db/db');
 
 
@@ -15,6 +15,8 @@ function sleep(ms) {
 
 
 async function ftdWorker() {
+  console.log("FTD--WORKING");
+
   while (true) {
     try {
       // 1. Fetch all pending FTD callbacks
@@ -39,6 +41,8 @@ async function ftdWorker() {
 async function processFtdRecord(record) {
   const client = await npradb.beginTransaction();
   try {
+    console.log("FTD--WORKING");
+
     // Extract actionCode from callback or event
     const actionCode = record.action_code;
   
@@ -64,7 +68,7 @@ async function processFtdRecord(record) {
     // Roll back if anything goes wrong
     await npradb.rollbackTransaction(client);
     console.error(`Error processing FTD record ${record.event_id}:`, error);
-    await markFailed(record.event_id, record.callback_id, client);
+    await markFailedError(record.event_id, record.callback_id, client);
   }
 }
 

@@ -48,12 +48,13 @@ globalEventEmitter.on("EVENT_TIMELINE", async (payload) => {
 });
 
 globalEventEmitter.on(ftdEventName, async (payload, requestResult) => {
+  let dateTime = convertTimestampToCustomFormat();
   try {
     let ftdPayload = {
       accountToCredit: payload.src_account_number,
       accountToDebit: payload.dest_account_number,
       channelCode: CHANNEL_CODE,
-      dateTime: payload.request_timestamp,
+      dateTime,
       destBank: payload.dest_bank_code,
       functionCode: FTD_CODE,
       narration: payload.narration,

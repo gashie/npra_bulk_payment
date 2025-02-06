@@ -4,12 +4,14 @@ const {
   CALLBACK_URL,
   FTC_CODE,
   gipFtcUrl,
+  gipTsqUrl,
 } = require("../../config/config");
 const { makeGipRequestService } = require("../../services/request");
 const npradb = require("./db"); // your dynamic CRUD + transaction helpers
 const pool = require("./pool");
 const config = require("../worker/config.json");
 const globalEventEmitter = require("../../utils/eventEmitter");
+const { convertTimestampToCustomFormat } = require("../../helper/func");
 
 /**
  * Create an FTC_REQUEST event in the `event` table.
@@ -18,9 +20,9 @@ const globalEventEmitter = require("../../utils/eventEmitter");
  * @returns {Object} The newly created event row.
  */
 async function createFtcRequest(record, client, request_id) {
-  
+
   try {
-     const unique_result = await npradb.uniqueIdNoParam();
+    const unique_result = await npradb.uniqueIdNoParam();
     // payload for the new event
     const ftcPayload = {
       accountToCredit: record.src_account_number,
@@ -32,12 +34,14 @@ async function createFtcRequest(record, client, request_id) {
       narration: record.narration,
       originBank: record.dest_bank_code,
       callbackUrl: CALLBACK_URL,
-      sessionId:  unique_result.rows[0].session_id, //autogenerate here
+      sessionId: unique_result.rows[0].session_id, //autogenerate here
       trackingNumber: unique_result.rows[0].tracking_number, //autogenerate here
       amount: record.amount,
       nameToCredit: record.src_account_name,
       nameToDebit: record.dest_account_name,
     };
+
+
 
     let event_response = await makeGipRequestService(ftcPayload, gipFtdUrl);
     let eventPayload = {
@@ -46,7 +50,7 @@ async function createFtcRequest(record, client, request_id) {
       event_url: gipFtcUrl,
       event_response: event_response.response,
       status: "PENDING",
-      callback: record.callback_url,
+      callback: record.callback,
       session_id: unique_result.rows[0].session_id,
       action_code: event_response.response.actionCode,
       tracking_number: unique_result.rows[0].tracking_number,
@@ -58,12 +62,12 @@ async function createFtcRequest(record, client, request_id) {
       src_bank_code: record.dest_account_number,
       dest_bank_code: record.src_account_number,
       request_id: record.request_id,
-      request_date_time:record.request_date_time,
-      request_tracking_number:record.request_tracking_number,
-      parent_event_id:record.event_id,
-      parent_session_id :record.session_id,
-      parent_tracking_number :record.tracking_number,
-      parent_callback_url:record.callback_url,
+      request_date_time: record.request_date_time,
+      request_tracking_number: record.request_tracking_number,
+      parent_event_id: record.event_id,
+      parent_session_id: record.session_id,
+      parent_tracking_number: record.tracking_number,
+      parent_callback_url: record.callback,
     };
 
     // Use npradb.Create with the transaction client
@@ -84,7 +88,145 @@ async function createFtcRequest(record, client, request_id) {
     throw err; // bubble up the error
   }
 }
+async function createFtcTsqRequest(record, client, request_id) {
+  let dateTime = convertTimestampToCustomFormat();
 
+
+  try {
+    // payload for the new event
+    const ftcPayload = {
+      accountToCredit: record.src_account_number,
+      accountToDebit: record.dest_account_number,
+      channelCode: CHANNEL_CODE,
+      dateTime, //autogenerate here
+      destBank: record.src_bank_code,
+      functionCode: FTC_CODE,
+      narration: record.narration,
+      originBank: record.dest_bank_code,
+      callbackUrl: CALLBACK_URL,
+      sessionId: record.session_id, //autogenerate here
+      trackingNumber: record.tracking_number, //autogenerate here
+      amount: record.amount,
+      nameToCredit: record.src_account_name,
+      nameToDebit: record.dest_account_name,
+    };
+
+
+
+    let event_response = await makeGipRequestService(ftcPayload, gipTsqUrl);
+    let eventPayload = {
+      event_name: "TSQ_REQUEST",
+      event_payload: ftcPayload,
+      event_url: gipFtcUrl,
+      event_response: event_response.response,
+      status: "PENDING",
+      callback: record.callback,
+      session_id: record.session_id,
+      action_code: event_response.response.actionCode,
+      tracking_number: record.tracking_number,
+      approval_code: event_response.response.actionCode,
+      dest_account_number: record.dest_account_number,
+      src_account_number: record.src_account_number,
+      dest_account_name: record.dest_account_name,
+      src_account_name: record.src_account_name,
+      src_bank_code: record.dest_account_number,
+      dest_bank_code: record.src_account_number,
+      request_id: record.request_id,
+      request_date_time: record.request_date_time,
+      request_tracking_number: record.request_tracking_number,
+      parent_event_id: record.event_id,
+      parent_session_id: record.session_id,
+      parent_tracking_number: record.tracking_number,
+      parent_callback_url: record.callback,
+    };
+
+    // Use npradb.Create with the transaction client
+    const newFtc = await npradb.Create(eventPayload, "event", null, client);
+
+    eventTimelinePayload = {
+      transaction_id: newFtc.event_id,
+      event_type: newFtc.event_name,
+      event_details: "TSQ_CREATED",
+      status: "PENDING",
+      remarks: newFtc.event_id,
+    };
+
+    await globalEventEmitter.emit("EVENT_TIMELINE", eventTimelinePayload);
+
+    return event_response.response;
+  } catch (err) {
+    throw err; // bubble up the error
+  }
+}
+async function createFtcRetryRequest(record, client, request_id) {
+
+  try {
+    const unique_result = await npradb.uniqueIdNoParam();
+    // payload for the new event
+    const ftcPayload = {
+      accountToCredit: record.src_account_number,
+      accountToDebit: record.dest_account_number,
+      channelCode: CHANNEL_CODE,
+      dateTime: record.request_timestamp, //autogenerate here
+      destBank: record.src_bank_code,
+      functionCode: FTC_CODE,
+      narration: record.narration,
+      originBank: record.dest_bank_code,
+      callbackUrl: CALLBACK_URL,
+      sessionId: unique_result.rows[0].session_id, //autogenerate here
+      trackingNumber: unique_result.rows[0].tracking_number, //autogenerate here
+      amount: record.amount,
+      nameToCredit: record.src_account_name,
+      nameToDebit: record.dest_account_name,
+    };
+
+
+
+    let event_response = await makeGipRequestService(ftcPayload, gipTsqUrl);
+    let eventPayload = {
+      event_name: "FTC_REQUEST",
+      event_payload: ftcPayload,
+      event_url: gipFtcUrl,
+      event_response: event_response.response,
+      status: "PENDING",
+      callback: record.callback,
+      session_id: unique_result.rows[0].session_id,
+      action_code: event_response.response.actionCode,
+      tracking_number: unique_result.rows[0].tracking_number,
+      approval_code: event_response.response.actionCode,
+      dest_account_number: record.dest_account_number,
+      src_account_number: record.src_account_number,
+      dest_account_name: record.dest_account_name,
+      src_account_name: record.src_account_name,
+      src_bank_code: record.dest_account_number,
+      dest_bank_code: record.src_account_number,
+      request_id: record.request_id,
+      request_date_time: record.request_date_time,
+      request_tracking_number: record.request_tracking_number,
+      parent_event_id: record.event_id,
+      parent_session_id: record.session_id,
+      parent_tracking_number: record.tracking_number,
+      parent_callback_url: record.callback,
+    };
+
+    // Use npradb.Create with the transaction client
+    const newFtc = await npradb.Create(eventPayload, "event", null, client);
+
+    eventTimelinePayload = {
+      transaction_id: newFtc.event_id,
+      event_type: newFtc.event_name,
+      event_details: "FTC_REQUEST",
+      status: "PENDING",
+      remarks: newFtc.event_id,
+    };
+
+    await globalEventEmitter.emit("EVENT_TIMELINE", eventTimelinePayload);
+
+    return event_response.response;
+  } catch (err) {
+    throw err; // bubble up the error
+  }
+}
 /**
  * Mark an event/callback as FAILED and enqueue a job in `job_queue`.
  * @param {Object} record - Must contain `event_id`, `callback_id`, etc.
@@ -116,7 +258,7 @@ async function markFailedAndEnqueueJob(record, client) {
     // 3) Insert a job into `job_queue`
     const jobPayload = {
       reason: "markFailedAndEnqueueJob",
-      record,
+      record:record.payload,
     };
     await npradb.Create({ payload: jobPayload }, "job_queue", null, client);
 
@@ -257,6 +399,32 @@ async function markFailed(eventId, callbackId, client) {
     throw err;
   }
 }
+async function markFailedError(eventId, callbackId, client) {
+  try {
+    if (eventId) {
+      await npradb.Update(
+        { status: "FAILED_ERROR" },
+        "event",
+        "event_id",
+        eventId,
+        client
+      );
+    }
+    if (callbackId) {
+      await npradb.Update(
+        { status: "FAILED_ERROR" },
+        "callback",
+        "callback_id",
+        callbackId,
+        client
+      );
+    }
+
+    console.log(`Event ${eventId} & Callback ${callbackId} => FAILED_ERROR`);
+  } catch (err) {
+    throw err;
+  }
+}
 
 /**
  * Mark event & callback as TSQ_STATE, also set event.tsq_state = true if that column exists.
@@ -325,6 +493,27 @@ const fetchFtdPendingCallbacks = async () => {
     JOIN event e ON e.session_id = c.session_id
     WHERE c.status = 'PENDING'
       AND e.event_name = 'FTD_REQUEST'
+      AND e.tsq_state = false
+    LIMIT 20
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
+};
+
+/**
+ * Fetch pending FTD callbacks by joining callback + event tables.
+ */
+const fetchFtcFailedRecords = async () => {
+  const sql = `
+    SELECT 
+      c.*, 
+      e.*,
+      c.action_code,
+      e.action_code AS event_action_code
+    FROM callback c
+    JOIN event e ON e.session_id = c.session_id
+    WHERE c.status = 'FAILED'
+      AND e.event_name = 'FTC_REQUEST'
       AND e.tsq_state = false
     LIMIT 20
   `;
@@ -457,6 +646,7 @@ module.exports = {
   sendJobToQueue,
   markSuccess,
   markFailed,
+  markFailedError,
   markTsqState,
   performTsqCheck,
   fetchFtdPendingCallbacks,
@@ -465,4 +655,7 @@ module.exports = {
   fetchFtdTsqRecords,
   saveOutgoingCallback,
   updateTsqIteration,
+  createFtcTsqRequest,
+  fetchFtcFailedRecords,
+  createFtcRetryRequest
 };

@@ -67,7 +67,7 @@ exports.createCallback = asynHandler(async (req, res) => {
   const payload = toSnakeCase(req.body);
 
   let body = {
-    payload: payload,
+    payload: req.body,
     amount: payload?.amount,
     date_time: payload?.date_time,
     dest_bank: payload?.dest_bank,

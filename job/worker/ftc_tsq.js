@@ -10,6 +10,7 @@ const {
   sendJobToQueue,
   markSuccess,
   createOutgoingCallback,
+  createFtcTsqRequest,
 } = require("../db/query");
 const config = require("./config.json");
 
@@ -18,6 +19,8 @@ function sleep(ms) {
 }
 
 async function ftcTsqWorker() {
+  console.log("FTC-TSQ--WORKING");
+
   while (true) {
     try {
       const ftcTsqRecords = await fetchFtcTsqRecords();
@@ -40,31 +43,47 @@ async function ftcTsqWorker() {
 async function processFtcTsqRecord(record) {
   const client = await npradb.beginTransaction();
   try {
-    const finalStatus = await makeGipRequestService(record, gipTsqUrl);
+    console.log("FTC-TSQ--WORKING");
+    let attempts = record.tsq_attempts || 0;
+    let finalStatus = await createFtcTsqRequest(record, client, record.callback_id);
+    console.log("Initial TSQ response:", finalStatus);
 
-    if (finalStatus === "FAILED") {
+    // Loop while the response is inconclusive and we haven't exhausted iterations.
+    while (["909", "912", null, "990"].includes(finalStatus?.actionCode) &&
+           attempts < config.tsq.maxIterations) {
+      // Increment the TSQ attempt in the database.
+      await updateTsqIteration(record, client); // This function should update record.tsq_attempts.
+      // Retrieve the latest tsq_attempts if needed:
+      attempts = record.tsq_attempts ? record.tsq_attempts + 1 : attempts + 1;
+      
+      // Wait for the configured interval (in minutes)
+      await sleep(config.tsq.intervalMinutes * 60000);
+      
+      finalStatus = await createFtcTsqRequest(record, client, record.callback_id);
+      console.log(`TSQ attempt ${attempts} response:`, finalStatus);
+    }
+    
+    if (["909", "912", null, "990"].includes(finalStatus?.actionCode)) {
+      // If still inconclusive after max iterations, mark as FAILED.
       await markFailed(record.event_id, record.callback_id, client);
-    } else if (["909", "912", null, "990"].includes(finalStatus)) {
-      if ((record.tsq_attempts || 0) >= config.tsq.maxIterations) {
-        await markFailed(record.event_id, record.callback_id, client);
-      } else {
-        await updateTsqIteration(record, client);
-        await markTsqState(record.event_id, record.callback_id, client);
-      }
-    } else if (["000"].includes(finalStatus)) {
+    } else if (finalStatus?.actionCode === "000") {
+      // Success: create outgoing callback, enqueue job, mark SUCCESS.
       await createOutgoingCallback(record, client);
       await sendJobToQueue(record, client);
       await markSuccess(record.event_id, record.callback_id, client);
     } else {
+      // Any other unexpected response: mark as FAILED.
       await markFailed(record.event_id, record.callback_id, client);
     }
-
+    
     await npradb.commitTransaction(client);
   } catch (error) {
     await npradb.rollbackTransaction(client);
     console.error(`Error processing FTC TSQ record ${record.id}:`, error);
+    // Optionally mark as failed outside the transaction:
     await markFailed(record.event_id, record.callback_id, client);
   }
 }
+
 
 module.exports = ftcTsqWorker;

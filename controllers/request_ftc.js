@@ -68,7 +68,6 @@ exports.sendRequest = asynHandler(async (req, res) => {
 
   const result = await requestService.saveReqestService(payload);
   let requestResult = result.rows?.[0];
-  console.log(requestResult);
   
   await globalEventEmitter.emit(eventName, payload, requestResult);
 
