@@ -256,10 +256,11 @@ async function markFailedAndEnqueueJob(record, client) {
     }
 
     // 3) Insert a job into `job_queue`
-    const jobPayload = {
-      reason: "markFailedAndEnqueueJob",
-      record:record.payload,
-    };
+    // const jobPayload = {
+    //   reason: "markFailedAndEnqueueJob",
+    //   record:record.payload,
+    // };
+    const jobPayload = { payload: record.payload }
     await npradb.Create({ payload: jobPayload }, "job_queue", null, client);
 
     console.log("Event & callback marked FAILED, job enqueued.");
