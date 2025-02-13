@@ -27,7 +27,8 @@ const EXPECTED_FUNCTIONS = [
   "saveEventTimeLine",
   "saveTSQLogs",
   'dynamicReports',
-  'generateRefNoParam'
+  'generateRefNoParam',
+  'saveQuery'
 ];
 
 module.exports = EXPECTED_FUNCTIONS;

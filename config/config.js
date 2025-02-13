@@ -1,13 +1,20 @@
+const dotenv = require('dotenv');
+
+const environment = 'development'
+
+// Load environment variables
+dotenv.config({ path: './config/config.env' });
+
 const config = {
   dbType: process.env.DB_TYPE || "postgres", // Use environment variable or default to postgres
   version: process.env.VERSION || "/api/",
   service_name: process.env.SERVICE_NAME || "gip",
   GateRepo: "gateway",
-  gipNedUrl: process.env.NODE_ENV === 'development' ? 'http://localhost:3004/ned':process.env.GIP_TEST_URL,
-  gipNecUrl: process.env.NODE_ENV === 'development' ? 'http://localhost:3004/nec':process.env.GIP_TEST_URL,
-  gipFtdUrl: process.env.NODE_ENV === 'development' ? 'http://localhost:3004/ftd':process.env.GIP_TEST_URL,
-  gipFtcUrl: process.env.NODE_ENV === 'development' ? 'http://localhost:3004/ftc':process.env.GIP_TEST_URL,
-  gipTsqUrl: process.env.NODE_ENV === 'development' ? 'http://localhost:3004/tsq':process.env.GIP_TEST_URL,
+  gipNedUrl: environment === 'development' ? 'http://localhost:3004/ned':process.env.GIP_TEST_URL,
+  gipNecUrl: environment === 'development' ? 'http://localhost:3004/nec':process.env.GIP_TEST_URL,
+  gipFtdUrl: environment === 'development' ? 'http://localhost:3004/ftd':process.env.GIP_TEST_URL,
+  gipFtcUrl: environment === 'development' ? 'http://localhost:3004/ftc':process.env.GIP_TEST_URL,
+  gipTsqUrl: environment === 'development' ? 'http://localhost:3004/tsq':process.env.GIP_TEST_URL,
   NEC_CODE: 230,
   FTD_CODE: 241,
   FTC_CODE: 240,

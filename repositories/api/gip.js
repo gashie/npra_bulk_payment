@@ -45,22 +45,10 @@ async function makeNecRequest(payload, srcBankCode, destBankCode) {
     }
 }
 
-async function gipGeneral(payload,url) {
+async function gipGeneral(payload, url) {
     const body = {
-        accountToCredit: payload.destAccountNumber,
-        accountToDebit: payload.srcAccountNumber,
-        amount: payload.amount,
-        callbackUrl: payload.callbackUrl,
-        channelCode: CHANNEL_CODE,
-        dateTime: payload.dateTime,
-        destBank: payload.destBankCode,
-        functionCode: payload.functionCode,
-        nameToCredit: payload.nameToCredit,
-        nameToDebit: payload.nameToDebit,
-        narration: payload.narration,
-        originBank: payload.srcBankCode,
-        sessionId: payload.sessionId,
-        trackingNumber: payload.trackingNumber
+        ...payload,
+        channelCode: CHANNEL_CODE
     }
 
     try {
@@ -71,7 +59,7 @@ async function gipGeneral(payload,url) {
         );
 
         // Log the responses
-       return { response };
+        return { response };
     } catch (error) {
         console.error('Error during rest request:', error);
         throw error;

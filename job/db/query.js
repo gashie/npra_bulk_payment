@@ -6,6 +6,10 @@ const {
   gipFtcUrl,
   gipTsqUrl,
 } = require("../../config/config");
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config({ path: './config/config.env' });
 const { makeGipRequestService } = require("../../services/request");
 const npradb = require("./db"); // your dynamic CRUD + transaction helpers
 const pool = require("./pool");
@@ -98,7 +102,7 @@ async function createFtcTsqRequest(record, client, request_id) {
       accountToCredit: record.src_account_number,
       accountToDebit: record.dest_account_number,
       channelCode: CHANNEL_CODE,
-      dateTime, //autogenerate here
+      dateTime: record.event_payload.dateTime,
       destBank: record.src_bank_code,
       functionCode: FTC_CODE,
       narration: record.narration,
@@ -502,6 +506,28 @@ const fetchFtdPendingCallbacks = async () => {
 };
 
 /**
+ * Fetch pending records with no callback by joining callback + event tables.
+ */
+const fetchPendingTsqRecords = async () => {
+  const sql = `
+    SELECT 
+  e.*, 
+  c.action_code AS callback_action_code,
+  c.status AS callback_status
+FROM event e
+LEFT JOIN callback c ON e.session_id = c.session_id
+WHERE e.event_name IN ('FTD_REQUEST', 'FTC_REQUEST')
+  AND e.status IN ('PENDING', 'TSQ_STATE')
+  AND e.created_at <= NOW() - INTERVAL '1 minutes'
+  AND (c.callback_id IS NULL)
+LIMIT 20;
+
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
+};
+
+/**
  * Fetch pending FTD callbacks by joining callback + event tables.
  */
 const fetchFtcFailedRecords = async () => {
@@ -658,5 +684,6 @@ module.exports = {
   updateTsqIteration,
   createFtcTsqRequest,
   fetchFtcFailedRecords,
-  createFtcRetryRequest
+  createFtcRetryRequest,
+  fetchPendingTsqRecords
 };

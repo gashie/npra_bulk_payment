@@ -11,6 +11,7 @@ const reportsController = require("../controllers/reports")
 // const ipAccessMiddleware = require("../middleware/ipmiddleware");
 const { NecValidator, ftdValidator, tsqValidator } = require("../middleware/validator");
 const verifyToken = require("../middleware/keycloak");
+const { createSavedQuery, mainReportController } = require("../controllers/dynamic_reports");
 
 router.post("/debit/v1/ne",verifyToken,NecValidator, requestController.sendRequest);
 router.post("/debit/v1/ft",verifyToken, ftdValidator,requestftcController.sendRequest);
@@ -36,5 +37,8 @@ router.post("/debit/v1/test/ne",NecValidator, requestController.sendRequest);
 router.post("/debit/v1/test/ft",ftdValidator,requestftcController.sendRequest);
 router.post("/debit/v1/test/tsq",tsqValidator, requestftcController.sendTsqRequest);
 router.post("/debit/v1/test/report", reportController.TransactionReport)
+
+router.post("/debit/v1/savequery", createSavedQuery)
+router.post("/debit/v1/rundynamicreport", mainReportController)
 
 module.exports = router;
