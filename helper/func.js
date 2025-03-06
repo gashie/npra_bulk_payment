@@ -10,7 +10,7 @@ module.exports = {
     const amountStr = (amount * 100).toFixed(0); // Multiplies by 100 to account for cents and removes decimal
 
     // Pad with leading zeros to ensure the length is 13
-    const formattedAmount = amountStr.padStart(13, '0');
+    const formattedAmount = amountStr.padStart(12, '0');
 
     return formattedAmount;
   },

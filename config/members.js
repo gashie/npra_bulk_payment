@@ -286,6 +286,12 @@ let routingData = [
       "participant": "APPSNMOBILE SOLUTIONS LIMITED",
       "classification": "Third Party",
       "notes": "Sending Participant Only"
+    },
+    {
+      "code":"300315",
+      "participant": "DevBank",
+      "classification": "Third Party",
+      "notes": "Sending Participant Only"
     }
   ]
 

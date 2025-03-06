@@ -1,13 +1,12 @@
 const {
-  gipFtdUrl,
+
   CHANNEL_CODE,
   CALLBACK_URL,
   FTC_CODE,
-  gipFtcUrl,
-  gipTsqUrl,
 } = require("../../config/config");
 const dotenv = require('dotenv');
 
+const gipUrl = "http://172.21.8.21:9000/SwitchGIP/WSGIP"
 // Load environment variables
 dotenv.config({ path: './config/config.env' });
 const { makeGipRequestService } = require("../../services/request");
@@ -24,7 +23,7 @@ const { convertTimestampToCustomFormat } = require("../../helper/func");
  * @returns {Object} The newly created event row.
  */
 async function createFtcRequest(record, client, request_id) {
-
+  const request_timestamp = convertTimestampToCustomFormat();
   try {
     const unique_result = await npradb.uniqueIdNoParam();
     // payload for the new event
@@ -32,7 +31,7 @@ async function createFtcRequest(record, client, request_id) {
       accountToCredit: record.src_account_number,
       accountToDebit: record.dest_account_number,
       channelCode: CHANNEL_CODE,
-      dateTime: record.request_timestamp, //autogenerate here
+      dateTime: request_timestamp, //autogenerate here
       destBank: record.src_bank_code,
       functionCode: FTC_CODE,
       narration: record.narration,
@@ -47,11 +46,11 @@ async function createFtcRequest(record, client, request_id) {
 
 
 
-    let event_response = await makeGipRequestService(ftcPayload, gipFtdUrl);
+    let event_response = await makeGipRequestService(ftcPayload, gipUrl);
     let eventPayload = {
       event_name: "FTC_REQUEST",
       event_payload: ftcPayload,
-      event_url: gipFtcUrl,
+      event_url: gipUrl,
       event_response: event_response.response,
       status: "PENDING",
       callback: record.callback,
@@ -66,7 +65,7 @@ async function createFtcRequest(record, client, request_id) {
       src_bank_code: record.dest_account_number,
       dest_bank_code: record.src_account_number,
       request_id: record.request_id,
-      request_date_time: record.request_date_time,
+      request_date_time: request_timestamp,
       request_tracking_number: record.request_tracking_number,
       parent_event_id: record.event_id,
       parent_session_id: record.session_id,
@@ -117,11 +116,11 @@ async function createFtcTsqRequest(record, client, request_id) {
 
 
 
-    let event_response = await makeGipRequestService(ftcPayload, gipTsqUrl);
+    let event_response = await makeGipRequestService(ftcPayload, gipUrl);
     let eventPayload = {
       event_name: "TSQ_REQUEST",
       event_payload: ftcPayload,
-      event_url: gipFtcUrl,
+      event_url: gipUrl,
       event_response: event_response.response,
       status: "PENDING",
       callback: record.callback,
@@ -186,11 +185,11 @@ async function createFtcRetryRequest(record, client, request_id) {
 
 
 
-    let event_response = await makeGipRequestService(ftcPayload, gipTsqUrl);
+    let event_response = await makeGipRequestService(ftcPayload, gipUrl);
     let eventPayload = {
       event_name: "FTC_REQUEST",
       event_payload: ftcPayload,
-      event_url: gipFtcUrl,
+      event_url: gipUrl,
       event_response: event_response.response,
       status: "PENDING",
       callback: record.callback,

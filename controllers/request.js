@@ -13,7 +13,7 @@ const { gipNedUrl } = require("../config/config");
 
 exports.sendRequest = asynHandler(async (req, res) => {
   const eventName = "NAME_ENQUIRY";
-  const functionCode = "230";
+  const functionCode = "231";
   const request_timestamp = convertTimestampToCustomFormat();
 
   const payload = toSnakeCase(req.body);
@@ -70,10 +70,10 @@ exports.sendRequest = asynHandler(async (req, res) => {
     accountToCredit: payload.src_account_number,
     accountToDebit: payload.dest_account_number,
     dateTime: request_timestamp,
-    destBank: destBankCode,
+    destBank: destBankCode.code,
     functionCode: functionCode,
     narration: payload.narration,
-    originBank: srcBankCode,
+    originBank: srcBankCode.code,
     sessionId: payload.session_id,
     trackingNumber: payload.tracking_number,
     amount: payload.amount,
@@ -115,7 +115,6 @@ exports.sendRequest = asynHandler(async (req, res) => {
   };
 
   await globalEventEmitter.emit("EVENT_TIMELINE", eventTimelinePayload);
-
   return result.rowCount === 1
     ? sendGipResponse(res, 200, {
         responseCode: codeDetails.code,
@@ -124,8 +123,8 @@ exports.sendRequest = asynHandler(async (req, res) => {
         sessionId: payload.session_id,
         destBankCode: payload.dest_bank_code,
         destAccountNumber: payload.dest_account_number,
-        destAccountName: gip_response.NameToCredit,
-        destAccountName: gip_response.nameToDebit,
+        destAccountName: gip_response.response.nameToCredit,
+        destAccountName: gip_response.response.nameToDebit,
       })
     : // ? sendResponse(res, 1, 200, "Record saved", [])
       sendResponse(
